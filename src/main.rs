@@ -1,56 +1,42 @@
 use fltk::{enums::*, prelude::*, *};
-use std::path::PathBuf;
-
+mod state;
 mod utils;
-use crate::utils::*;
+use crate::state::State;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 
-struct State {
-    saved: bool,
-    buf: text::TextBuffer,
-    current_file: PathBuf,
-}
-
-impl State {
-    fn new(buf: text::TextBuffer) -> Self {
-        State {
-            saved: false,
-            buf,
-            current_file: PathBuf::new(),
-        }
-    }
-}
-
-lazy_static::lazy_static! {
-    static ref STATE: app::GlobalState<State> = app::GlobalState::<State>::get();
-}
-
 fn main() {
     let a = app::App::default().with_scheme(app::Scheme::Oxy);
+    app::get_system_colors();
+
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
+
     let state = State::new(buf.clone());
     app::GlobalState::new(state);
+
     let mut w = window::Window::default()
         .with_size(WIDTH, HEIGHT)
         .with_label("Ted");
+    w.set_xclass("ted");
     {
-        let mut m = menu::MenuBar::new(0, 0, WIDTH, 30, None);
-        m.add_choice(
-            "File/New|File/Open...|File/Save...|File/_Save As...|File/Quit|Edit/Cut|Edit/Copy|Edit/Paste|Help/About"
-        );
-        m.set_callback(menu_cb);
-        let mut ed = text::TextEditor::new(0, 30, WIDTH, HEIGHT - 30, None).with_id("ed");
+        let mut m = menu::SysMenuBar::default().with_size(WIDTH, 30);
+        utils::init_menu(&mut m);
+
+        let mut ed = text::TextEditor::default()
+            .with_size(WIDTH, HEIGHT - 30)
+            .below_of(&m, 0)
+            .with_id("ed");
         ed.set_linenumber_width(40);
+        ed.set_text_font(Font::Courier);
         ed.set_buffer(buf);
         ed.set_trigger(CallbackTrigger::Changed);
-        ed.set_callback(editor_cb);
+        ed.set_callback(utils::editor_cb);
         w.resizable(&ed);
     }
     w.end();
     w.show();
-    w.set_callback(win_cb);
+    w.set_callback(utils::win_cb);
     a.run().unwrap();
 }
