@@ -5,6 +5,7 @@ use crate::state::State;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
+const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 0 } else { 30 };
 
 fn main() {
     let a = app::App::default().with_scheme(app::Scheme::Oxy);
@@ -21,11 +22,11 @@ fn main() {
         .with_label("Ted");
     w.set_xclass("ted");
     {
-        let mut m = menu::SysMenuBar::default().with_size(WIDTH, 30);
+        let mut m = menu::SysMenuBar::default().with_size(WIDTH, MENU_HEIGHT);
         utils::init_menu(&mut m);
 
         let mut ed = text::TextEditor::default()
-            .with_size(WIDTH, HEIGHT - 30)
+            .with_size(WIDTH, HEIGHT - MENU_HEIGHT)
             .below_of(&m, 0)
             .with_id("ed");
         ed.set_linenumber_width(40);
