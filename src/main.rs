@@ -1,12 +1,13 @@
 use fltk::{enums::*, prelude::*, *};
 use std::{env, path::PathBuf};
-mod state;
-mod utils;
 mod dialogs;
+mod state;
+mod term;
+mod utils;
 use crate::state::State;
 
-const WIDTH: i32 = 800;
-const HEIGHT: i32 = 600;
+const WIDTH: i32 = 1024;
+const HEIGHT: i32 = 768;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 0 } else { 30 };
 
 fn main() {
@@ -30,28 +31,42 @@ fn main() {
         .with_label("RustyEd");
     w.set_xclass("red");
     {
-        let mut m = menu::SysMenuBar::default().with_size(WIDTH, MENU_HEIGHT);
+        let mut m = menu::SysMenuBar::default()
+            .with_size(WIDTH, MENU_HEIGHT)
+            .with_id("menu");
         utils::init_menu(&mut m);
         let mut row = group::Flex::default()
             .with_size(WIDTH, HEIGHT - MENU_HEIGHT)
-            .row()
             .below_of(&m, 0);
         let mut fbr = browser::FileBrowser::default().with_type(browser::BrowserType::Hold);
         if current_path.exists() && current_path.is_dir() {
-            fbr.load(current_path).expect("Not a valid directory!");
-            row.set_size(&fbr, 200);
+            fbr.load(current_path.clone())
+                .expect("Not a valid directory!");
+            row.set_size(&fbr, 180);
         } else if current_path.exists() {
-            buf.load_file(current_path).unwrap();
+            buf.load_file(current_path.clone()).unwrap();
+            w.set_label(&format!("{} - RustyEd", current_path.display()));
             row.set_size(&fbr, 1);
         } else {
             row.set_size(&fbr, 1);
         }
+        let mut col = group::Flex::default().column();
         let mut ed = text::TextEditor::default().with_id("ed");
         ed.set_linenumber_width(40);
         ed.set_text_font(Font::Courier);
         ed.set_buffer(buf);
         ed.set_trigger(CallbackTrigger::Changed);
         ed.set_callback(utils::editor_cb);
+        let mut term = crate::term::AnsiTerm::default();
+        if current_path.exists() && current_path.is_dir() {
+            term.writer1
+                .write_all(
+                    format!("cd {}\n", current_path.canonicalize().unwrap().display()).as_bytes(),
+                )
+                .unwrap();
+        }
+        col.set_size(&*term, 200);
+        col.end();
         row.end();
         fbr.set_callback(utils::fbr_cb);
         w.resizable(&row);
@@ -60,6 +75,5 @@ fn main() {
     w.show();
     w.set_callback(utils::win_cb);
 
-    dialogs::FindDialog::new();
     a.run().unwrap();
 }

@@ -1,7 +1,7 @@
+use crate::dialogs;
 use crate::state::STATE;
-use crate::dialogs::FindDialog;
 use fltk::{enums::*, prelude::*, *};
-use std::{path::PathBuf, env};
+use std::{env, path::PathBuf};
 
 pub fn init_menu(m: &mut menu::SysMenuBar) {
     m.add(
@@ -98,11 +98,14 @@ fn close_app() {
 }
 
 fn find() {
-    let mut dlg = FindDialog::new();
+    let mut dlg = dialogs::FindDialog::new();
     dlg.show();
 }
 
-fn replace() {}
+fn replace() {
+    let mut dlg = dialogs::ReplaceDialog::new();
+    dlg.show();
+}
 
 pub fn win_cb(_: &mut window::Window) {
     if app::event() == Event::Close {
@@ -182,14 +185,12 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 f.load(path.clone()).expect("Couldn't load directory!");
                 let cwd = env::current_dir().unwrap();
                 env::set_current_dir(cwd.join(path)).unwrap();
-            } else {
-                if let Ok(text) = std::fs::read_to_string(&path) {
-                    STATE.with(move |s| {
-                        s.buf.set_text(&text);
-                        s.saved(true);
-                        s.current_file = path.clone();
-                    });
-                }
+            } else if let Ok(text) = std::fs::read_to_string(&path) {
+                STATE.with(move |s| {
+                    s.buf.set_text(&text);
+                    s.current_file = path.clone();
+                    s.saved(true);
+                });
             }
         }
     }

@@ -1,4 +1,4 @@
-use fltk::{app, text, utils::oncelock::Lazy, prelude::WidgetExt};
+use fltk::{app, prelude::WidgetExt, text, utils::oncelock::Lazy};
 use std::path::PathBuf;
 
 pub struct State {
@@ -13,18 +13,30 @@ impl State {
         State {
             is_saved: true,
             buf,
-            current_file: if !current_path.is_dir() { current_path.clone() } else { PathBuf::new() },
-            current_dir: if current_path.is_dir() { current_path } else { PathBuf::new() },
+            current_file: if !current_path.is_dir() {
+                current_path.clone()
+            } else {
+                PathBuf::new()
+            },
+            current_dir: if current_path.is_dir() {
+                current_path
+            } else {
+                PathBuf::new()
+            },
         }
     }
     pub fn saved(&mut self, flag: bool) {
         self.is_saved = flag;
         if flag {
-            app::first_window().unwrap().set_label("RustEd");
+            app::first_window()
+                .unwrap()
+                .set_label(&format!("{} - RustyEd", self.current_file.display()));
         } else {
-            app::first_window().unwrap().set_label("RustEd*");
+            app::first_window()
+                .unwrap()
+                .set_label(&format!("*{} - RustyEd", self.current_file.display()));
         }
     }
 }
 
-pub static STATE: Lazy<app::GlobalState<State>> = Lazy::new(|| app::GlobalState::<State>::get());
+pub static STATE: Lazy<app::GlobalState<State>> = Lazy::new(app::GlobalState::<State>::get);

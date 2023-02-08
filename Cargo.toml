@@ -5,6 +5,7 @@ edition = "2018"
 
 [dependencies]
 fltk = { version = "1.3.30", features = ["fltk-bundled"] }
+portable-pty = "0.7"
 
 [profile.release]
 strip = true
