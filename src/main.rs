@@ -2,6 +2,7 @@ use fltk::{enums::*, prelude::*, *};
 use std::{env, path::PathBuf};
 mod state;
 mod utils;
+mod dialogs;
 use crate::state::State;
 
 const WIDTH: i32 = 800;
@@ -58,5 +59,7 @@ fn main() {
     w.end();
     w.show();
     w.set_callback(utils::win_cb);
+
+    dialogs::FindDialog::new();
     a.run().unwrap();
 }

@@ -1,4 +1,5 @@
 use crate::state::STATE;
+use crate::dialogs::FindDialog;
 use fltk::{enums::*, prelude::*, *};
 use std::{path::PathBuf, env};
 
@@ -49,6 +50,18 @@ pub fn init_menu(m: &mut menu::SysMenuBar) {
     m.add(
         "&Edit/Paste\t",
         Shortcut::Ctrl | 'v',
+        menu::MenuFlag::MenuDivider,
+        menu_cb,
+    );
+    m.add(
+        "&Edit/Find\t",
+        Shortcut::Ctrl | 'f',
+        menu::MenuFlag::Normal,
+        menu_cb,
+    );
+    m.add(
+        "&Edit/Replace\t",
+        Shortcut::Ctrl | 'h',
         menu::MenuFlag::Normal,
         menu_cb,
     );
@@ -66,44 +79,34 @@ fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
     nfc.filename()
 }
 
-pub fn win_cb(_: &mut window::Window) {
-    if app::event() == Event::Close {
-        STATE.with(|s| {
-            if s.is_saved {
+fn close_app() {
+    STATE.with(|s| {
+        if s.is_saved {
+            app::quit();
+        } else {
+            let c = dialog::choice2_default(
+                "Are you sure you want to exit without saving?",
+                "Yes",
+                "No",
+                "",
+            );
+            if c == Some(0) {
                 app::quit();
-            } else {
-                let c = dialog::choice2_default(
-                    "Are you sure you want to exit without saving?",
-                    "Yes",
-                    "No",
-                    "",
-                );
-                if c == Some(0) {
-                    app::quit();
-                }
-            }
-        });
-    }
-}
-
-pub fn fbr_cb(f: &mut browser::FileBrowser) {
-    if let Some(path) = f.text(f.value()) {
-        let path = PathBuf::from(path);
-        if path.exists() {
-            if path.is_dir() && app::event_clicks() {
-                f.load(path.clone()).expect("Couldn't load directory!");
-                let cwd = env::current_dir().unwrap();
-                env::set_current_dir(cwd.join(path)).unwrap();
-            } else {
-                if let Ok(text) = std::fs::read_to_string(&path) {
-                    STATE.with(move |s| {
-                        s.buf.set_text(&text);
-                        s.saved(true);
-                        s.current_file = path.clone();
-                    });
-                }
             }
         }
+    });
+}
+
+fn find() {
+    let mut dlg = FindDialog::new();
+    dlg.show();
+}
+
+fn replace() {}
+
+pub fn win_cb(_: &mut window::Window) {
+    if app::event() == Event::Close {
+        close_app();
     }
 }
 
@@ -157,30 +160,37 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
                     s.current_file = c.clone();
                 });
             }
-            "&File/Quit\t" => {
-                STATE.with(|s| {
-                    if s.is_saved {
-                        app::quit();
-                    } else {
-                        let c = dialog::choice2_default(
-                            "Are you sure you want to exit without saving?",
-                            "Yes",
-                            "No",
-                            "",
-                        );
-                        if c == Some(0) {
-                            app::quit();
-                        }
-                    }
-                });
-            }
+            "&File/Quit\t" => close_app(),
             "&Edit/Cut\t" => ed.cut(),
             "&Edit/Copy\t" => ed.copy(),
             "&Edit/Paste\t" => ed.paste(),
+            "&Edit/Find\t" => find(),
+            "&Edit/Replace\t" => replace(),
             "&Help/About\t" => {
                 dialog::message_default("A minimal text editor written using fltk-rs!")
             }
             _ => unreachable!(),
+        }
+    }
+}
+
+pub fn fbr_cb(f: &mut browser::FileBrowser) {
+    if let Some(path) = f.text(f.value()) {
+        let path = PathBuf::from(path);
+        if path.exists() {
+            if path.is_dir() && app::event_clicks() {
+                f.load(path.clone()).expect("Couldn't load directory!");
+                let cwd = env::current_dir().unwrap();
+                env::set_current_dir(cwd.join(path)).unwrap();
+            } else {
+                if let Ok(text) = std::fs::read_to_string(&path) {
+                    STATE.with(move |s| {
+                        s.buf.set_text(&text);
+                        s.saved(true);
+                        s.current_file = path.clone();
+                    });
+                }
+            }
         }
     }
 }
