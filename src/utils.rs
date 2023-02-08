@@ -72,6 +72,21 @@ pub fn win_cb(w: &mut window::Window) {
     }
 }
 
+pub fn fbr_cb(f: &mut browser::FileBrowser) {
+    if let Some(path) = f.text(f.value()) {
+        let path = PathBuf::from(path);
+        if path.exists() && !path.is_dir() {
+            if let Ok(text) = std::fs::read_to_string(&path) {
+                STATE.with(move |s| {
+                    s.buf.set_text(&text);
+                    s.saved = false;
+                    s.current_file = path.clone();
+                });
+            }
+        }
+    }
+}
+
 pub fn editor_cb(_e: &mut text::TextEditor) {
     STATE.with(|s| s.saved = false);
 }
