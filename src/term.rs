@@ -26,10 +26,10 @@ impl AnsiTerm {
         st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 80,
-                rows: 24,
-                pixel_width: 80 * 10,
-                pixel_height: 24 * 16,
+                cols: 84,
+                rows: 20,
+                pixel_width: 84 * 10,
+                pixel_height: 20 * 16,
             })
             .unwrap();
 
