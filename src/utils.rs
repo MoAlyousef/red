@@ -1,6 +1,6 @@
 use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
-use std::path::PathBuf;
+use std::{path::PathBuf, env};
 
 pub fn init_menu(m: &mut menu::SysMenuBar) {
     m.add(
@@ -75,13 +75,19 @@ pub fn win_cb(w: &mut window::Window) {
 pub fn fbr_cb(f: &mut browser::FileBrowser) {
     if let Some(path) = f.text(f.value()) {
         let path = PathBuf::from(path);
-        if path.exists() && !path.is_dir() {
-            if let Ok(text) = std::fs::read_to_string(&path) {
-                STATE.with(move |s| {
-                    s.buf.set_text(&text);
-                    s.saved = false;
-                    s.current_file = path.clone();
-                });
+        if path.exists() {
+            if path.is_dir() && app::event_clicks() {
+                f.load(path.clone()).expect("Couldn't load directory!");
+                let cwd = env::current_dir().unwrap();
+                env::set_current_dir(cwd.join(path)).unwrap();
+            } else {
+                if let Ok(text) = std::fs::read_to_string(&path) {
+                    STATE.with(move |s| {
+                        s.buf.set_text(&text);
+                        s.saved = false;
+                        s.current_file = path.clone();
+                    });
+                }
             }
         }
     }
