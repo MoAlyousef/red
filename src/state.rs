@@ -1,20 +1,28 @@
-use fltk::{app, text, utils::oncelock::Lazy};
+use fltk::{app, text, utils::oncelock::Lazy, prelude::WidgetExt};
 use std::path::PathBuf;
 
 pub struct State {
-    pub saved: bool,
+    pub is_saved: bool,
     pub buf: text::TextBuffer,
     pub current_file: PathBuf,
     pub current_dir: PathBuf,
 }
 
 impl State {
-    pub fn new(buf: text::TextBuffer, current_dir: PathBuf) -> Self {
+    pub fn new(buf: text::TextBuffer, current_path: PathBuf) -> Self {
         State {
-            saved: false,
+            is_saved: true,
             buf,
-            current_file: PathBuf::new(),
-            current_dir,
+            current_file: if !current_path.is_dir() { current_path.clone() } else { PathBuf::new() },
+            current_dir: if current_path.is_dir() { current_path } else { PathBuf::new() },
+        }
+    }
+    pub fn saved(&mut self, flag: bool) {
+        self.is_saved = flag;
+        if flag {
+            app::first_window().unwrap().set_label("RustEd");
+        } else {
+            app::first_window().unwrap().set_label("RustEd*");
         }
     }
 }
