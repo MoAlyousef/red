@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fltk = { version = "1.3.30", features = ["fltk-bundled"] }
+fltk = { version = "1.3.30", features = ["no-images"] }
 portable-pty = { version = "0.7", optional = true }
 
 [profile.release]
