@@ -14,22 +14,16 @@ impl Default for AnsiTerm {
 }
 
 impl AnsiTerm {
-    pub fn new<L: Into<Option<&'static str>>>(
-        x: i32,
-        y: i32,
-        w: i32,
-        h: i32,
-        label: L,
-    ) -> Self {
+    pub fn new<L: Into<Option<&'static str>>>(x: i32, y: i32, w: i32, h: i32, label: L) -> Self {
         let mut st = text::SimpleTerminal::new(x, y, w, h, label);
         // SimpleTerminal handles many common ansi escape sequence
         st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 84,
-                rows: 20,
-                pixel_width: 84 * 10,
-                pixel_height: 20 * 16,
+                cols: 64,
+                rows: 16,
+                pixel_width: 64 * 10,
+                pixel_height: 16 * 16,
             })
             .unwrap();
 

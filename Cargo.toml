@@ -1,11 +1,11 @@
 [package]
 name = "red"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 fltk = { version = "1.3.30", features = ["fltk-bundled"] }
-portable-pty = "0.7"
+portable-pty = { version = "0.7", optional = true }
 
 [profile.release]
 strip = true

@@ -2,12 +2,13 @@ use fltk::{enums::*, prelude::*, *};
 use std::{env, path::PathBuf};
 mod dialogs;
 mod state;
+#[cfg(feature = "portable-pty")]
 mod term;
 mod utils;
 use crate::state::State;
 
-const WIDTH: i32 = 1024;
-const HEIGHT: i32 = 768;
+const WIDTH: i32 = 800;
+const HEIGHT: i32 = 600;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 0 } else { 30 };
 
 fn main() {
@@ -39,17 +40,22 @@ fn main() {
             .with_size(WIDTH, HEIGHT - MENU_HEIGHT)
             .below_of(&m, 0);
         let mut fbr = browser::FileBrowser::default().with_type(browser::BrowserType::Hold);
-        if current_path.exists() && current_path.is_dir() {
-            fbr.load(current_path.clone())
-                .expect("Not a valid directory!");
-            row.set_size(&fbr, 180);
-        } else if current_path.exists() {
-            buf.load_file(current_path.clone()).unwrap();
+        if current_path.exists() {
+            if current_path.is_dir() {
+                #[allow(clippy::redundant_clone)]
+                fbr.load(current_path.clone())
+                    .expect("Not a valid directory!");
+                row.set_size(&fbr, 180);
+            } else {
+                buf.load_file(current_path.clone()).unwrap();
+                w.set_label(&format!("{} - RustyEd", current_path.display()));
+                row.set_size(&fbr, 1);
+            }
+        } else {
             w.set_label(&format!("{} - RustyEd", current_path.display()));
             row.set_size(&fbr, 1);
-        } else {
-            row.set_size(&fbr, 1);
         }
+        #[allow(unused_mut)]
         let mut col = group::Flex::default().column();
         let mut ed = text::TextEditor::default().with_id("ed");
         ed.set_linenumber_width(40);
@@ -57,15 +63,36 @@ fn main() {
         ed.set_buffer(buf);
         ed.set_trigger(CallbackTrigger::Changed);
         ed.set_callback(utils::editor_cb);
-        let mut term = crate::term::AnsiTerm::default();
-        if current_path.exists() && current_path.is_dir() {
-            term.writer1
-                .write_all(
-                    format!("cd {}\n", current_path.canonicalize().unwrap().display()).as_bytes(),
-                )
-                .unwrap();
+        #[cfg(feature = "portable-pty")]
+        {
+            let mut term = crate::term::AnsiTerm::default();
+            if current_path.exists() {
+                if current_path.is_dir() {
+                    term.writer1
+                        .write_all(
+                            format!("cd {}\n", current_path.canonicalize().unwrap().display())
+                                .as_bytes(),
+                        )
+                        .unwrap();
+                } else {
+                    term.writer1
+                        .write_all(
+                            format!(
+                                "cd {}\n",
+                                current_path
+                                    .canonicalize()
+                                    .unwrap()
+                                    .parent()
+                                    .unwrap()
+                                    .display()
+                            )
+                            .as_bytes(),
+                        )
+                        .unwrap();
+                }
+            }
+            col.set_size(&*term, 160);
         }
-        col.set_size(&*term, 200);
         col.end();
         row.end();
         fbr.set_callback(utils::fbr_cb);
