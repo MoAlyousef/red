@@ -2,7 +2,7 @@ use fltk::{app, prelude::WidgetExt, text, utils::oncelock::Lazy};
 use std::path::PathBuf;
 
 pub struct State {
-    pub is_saved: bool,
+    pub modified: bool,
     pub buf: text::TextBuffer,
     pub current_file: PathBuf,
     pub current_dir: PathBuf,
@@ -11,7 +11,7 @@ pub struct State {
 impl State {
     pub fn new(buf: text::TextBuffer, current_path: PathBuf) -> Self {
         State {
-            is_saved: true,
+            modified: false,
             buf,
             current_file: if !current_path.is_dir() {
                 current_path.clone()
@@ -25,9 +25,9 @@ impl State {
             },
         }
     }
-    pub fn saved(&mut self, flag: bool) {
-        self.is_saved = flag;
-        if flag {
+    pub fn was_modified(&mut self, flag: bool) {
+        self.modified = flag;
+        if !flag {
             app::first_window()
                 .unwrap()
                 .set_label(&format!("{} - RustyEd", self.current_file.display()));

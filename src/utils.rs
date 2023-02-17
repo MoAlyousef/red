@@ -81,7 +81,7 @@ fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
 
 fn close_app() {
     STATE.with(|s| {
-        if s.is_saved {
+        if !s.modified {
             app::quit();
         } else {
             let c = dialog::choice2_default(
@@ -114,7 +114,7 @@ pub fn win_cb(_: &mut window::Window) {
 }
 
 pub fn editor_cb(_e: &mut text::TextEditor) {
-    STATE.with(|s| s.saved(false));
+    STATE.with(|s| s.was_modified(true));
 }
 
 pub fn menu_cb(m: &mut menu::SysMenuBar) {
@@ -132,7 +132,7 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
                         );
                         if c == Some(0) {
                             s.buf.set_text("");
-                            s.saved(true);
+                            s.was_modified(false);
                         }
                     }
                 });
@@ -142,26 +142,27 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
                 if let Ok(text) = std::fs::read_to_string(&c) {
                     STATE.with(move |s| {
                         s.buf.set_text(&text);
-                        s.saved(true);
+                        s.was_modified(false);
                         s.current_file = c.clone();
                     });
                 }
             }
             "&File/Save\t" => {
                 STATE.with(|s| {
-                    if !s.is_saved && s.current_file.exists() {
+                    if s.modified && s.current_file.exists() {
                         std::fs::write(&s.current_file, &s.buf.text()).ok();
-                        s.saved(true);
+                        s.was_modified(false);
                     }
                 });
             }
             "&File/Save as...\t" => {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseSaveFile);
-                STATE.with(move |s| {
-                    std::fs::write(&c, &s.buf.text()).ok();
-                    s.saved(true);
-                    s.current_file = c.clone();
-                });
+                if c.exists() {
+                    STATE.with(move |s| {
+                        std::fs::write(&c, &s.buf.text()).expect("Failed to write to file!");
+                        s.was_modified(false);
+                    });
+                }
             }
             "&File/Quit\t" => close_app(),
             "&Edit/Cut\t" => ed.cut(),
@@ -187,9 +188,23 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 env::set_current_dir(cwd.join(path)).unwrap();
             } else if let Ok(text) = std::fs::read_to_string(&path) {
                 STATE.with(move |s| {
-                    s.buf.set_text(&text);
-                    s.current_file = path.clone();
-                    s.saved(true);
+                    if s.modified {
+                        let c = dialog::choice2_default(
+                            "Are you sure you want to exit without saving?",
+                            "Yes",
+                            "No",
+                            "",
+                        );
+                        if c == Some(0) {
+                            s.buf.set_text(&text);
+                            s.current_file = path.clone();
+                            s.was_modified(false);
+                        }
+                    } else {
+                        s.buf.set_text(&text);
+                        s.current_file = path.clone();
+                        s.was_modified(false);
+                    }
                 });
             }
         }

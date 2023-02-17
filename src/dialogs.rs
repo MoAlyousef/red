@@ -89,7 +89,7 @@ impl ReplaceDialog {
                     let text = s.buf.text();
                     let ntext = text.replace(&search, &replace);
                     s.buf.set_text(&ntext);
-                    s.saved(false);
+                    s.was_modified(true);
                 }
             });
         });
