@@ -66,7 +66,7 @@ fn main() {
                 "unnamed"
             } else {
                 &current_path.file_name().unwrap().to_str().unwrap()
-            });
+            }).with_id("edrow");
         edrow.set_trigger(CallbackTrigger::Closed);
         edrow.set_callback(utils::tab_close_cb);
         let mut ed = text::TextEditor::default().with_id("ed");
@@ -91,6 +91,7 @@ fn main() {
         col.end();
     }
     w.end();
+    w.make_resizable(true);
     w.show();
     w.set_callback(utils::win_cb);
 

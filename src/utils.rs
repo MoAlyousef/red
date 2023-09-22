@@ -180,6 +180,7 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
 
 pub fn fbr_cb(f: &mut browser::FileBrowser) {
     if let Some(path) = f.text(f.value()) {
+        let path0 = path.clone();
         let path = PathBuf::from(path);
         if path.exists() {
             if path.is_dir() && app::event_clicks() {
@@ -187,6 +188,7 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 let cwd = env::current_dir().unwrap();
                 env::set_current_dir(cwd.join(path)).unwrap();
             } else if let Ok(text) = std::fs::read_to_string(&path) {
+                let mut tab: group::Flex = app::widget_from_id("edrow").unwrap();
                 STATE.with(move |s| {
                     if s.modified {
                         let c = dialog::choice2_default(
@@ -199,11 +201,15 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                             s.buf.set_text(&text);
                             s.current_file = path.clone();
                             s.was_modified(false);
+                            tab.set_label(&path0);
+                            app::redraw();
                         }
                     } else {
                         s.buf.set_text(&text);
                         s.current_file = path.clone();
                         s.was_modified(false);
+                        tab.set_label(&path0);
+                        app::redraw();
                     }
                 });
             }
