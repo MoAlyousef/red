@@ -150,7 +150,7 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
             "&File/Save\t" => {
                 STATE.with(|s| {
                     if s.modified && s.current_file.exists() {
-                        std::fs::write(&s.current_file, &s.buf.text()).ok();
+                        std::fs::write(&s.current_file, s.buf.text()).ok();
                         s.was_modified(false);
                     }
                 });
@@ -159,7 +159,7 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseSaveFile);
                 if c.exists() {
                     STATE.with(move |s| {
-                        std::fs::write(&c, &s.buf.text()).expect("Failed to write to file!");
+                        std::fs::write(&c, s.buf.text()).expect("Failed to write to file!");
                         s.was_modified(false);
                     });
                 }
@@ -207,6 +207,47 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                     }
                 });
             }
+        }
+    }
+}
+
+pub fn tab_close_cb(g: &mut impl GroupExt) {
+    if app::callback_reason() == CallbackReason::Closed {
+        let mut parent = g.parent().unwrap();
+        parent.remove(g);
+        app::redraw();
+    }
+}
+
+#[cfg(feature = "portable-pty")]
+pub fn init_term(term: &crate::term::AnsiTerm, current_path: PathBuf) {
+    if current_path.exists() {
+        let mut writer1 = term.writer1.lock().unwrap();
+        if current_path.is_dir() {
+            writer1
+                .write_all(
+                    format!(
+                        "cd {}\nclear\n",
+                        current_path.canonicalize().unwrap().display()
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
+        } else {
+            writer1
+                .write_all(
+                    format!(
+                        "cd {}\nclear\n",
+                        current_path
+                            .canonicalize()
+                            .unwrap()
+                            .parent()
+                            .unwrap()
+                            .display()
+                    )
+                    .as_bytes(),
+                )
+                .unwrap();
         }
     }
 }

@@ -15,7 +15,7 @@ impl FindDialog {
         let mut row = group::Flex::default_fill();
         row.set_margin(10);
         let f = frame::Frame::default().with_label("Find:");
-        row.set_size(&f, 30);
+        row.fixed(&f, 30);
         let mut i = input::Input::default();
         i.set_trigger(enums::CallbackTrigger::EnterKeyAlways);
         i.set_callback({
@@ -43,7 +43,7 @@ impl FindDialog {
         });
         let mut b = button::Button::default().with_label("Next");
         b.set_callback(move |_| i.do_callback());
-        row.set_size(&b, 60);
+        row.fixed(&b, 60);
         row.end();
         win.end();
         win.set_callback(|w| {
@@ -71,14 +71,14 @@ impl ReplaceDialog {
         col.set_margin(5);
         let mut row = group::Flex::default();
         let f = frame::Frame::default().with_label("Search:");
-        row.set_size(&f, 60);
+        row.fixed(&f, 60);
         let search = input::Input::default();
         let f = frame::Frame::default();
-        row.set_size(&f, 60);
+        row.fixed(&f, 60);
         row.end();
         let mut row = group::Flex::default();
         let f = frame::Frame::default().with_label("Replace:");
-        row.set_size(&f, 60);
+        row.fixed(&f, 60);
         let replace = input::Input::default();
         let mut b = button::Button::default().with_label("Apply!");
         b.set_callback(move |_| {
@@ -93,7 +93,7 @@ impl ReplaceDialog {
                 }
             });
         });
-        row.set_size(&b, 60);
+        row.fixed(&b, 60);
         row.end();
         col.end();
         win.end();
