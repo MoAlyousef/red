@@ -28,6 +28,9 @@ fn main() {
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
 
+    let _find_dialog = crate::dialogs::FindDialog::new();
+    let _replace_dialog = crate::dialogs::ReplaceDialog::new();
+
     let mut w = window::Window::default()
         .with_size(WIDTH, HEIGHT)
         .with_label("RustyEd");
@@ -73,11 +76,8 @@ fn main() {
     edrow.set_trigger(CallbackTrigger::Closed);
     edrow.set_callback(utils::tab_close_cb);
     let mut ed = text::TextEditor::default();
-    ed.set_linenumber_width(40);
-    ed.set_text_font(Font::Courier);
     ed.set_buffer(buf.clone());
-    ed.set_trigger(CallbackTrigger::Changed);
-    ed.set_callback(utils::editor_cb);
+    utils::init_editor(&mut ed);
     edrow.end();
     tabs.end();
     tabs.auto_layout();

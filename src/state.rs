@@ -63,6 +63,7 @@ impl State {
             let id = format!("edrow{}", old_count);
             COUNT.store(old_count + 1, Ordering::Relaxed);
             let mut buf = text::TextBuffer::default();
+            buf.set_tab_distance(4);
             if let Some(p) = current_path.as_ref() {
                 buf.load_file(p).ok();
             }
@@ -82,11 +83,8 @@ impl State {
             edrow.set_trigger(CallbackTrigger::Closed);
             edrow.set_callback(crate::utils::tab_close_cb);
             let mut ed = text::TextEditor::default().with_id("ed");
-            ed.set_linenumber_width(40);
-            ed.set_text_font(Font::Courier);
             ed.set_buffer(buf.clone());
-            ed.set_trigger(CallbackTrigger::Changed);
-            ed.set_callback(crate::utils::editor_cb);
+            crate::utils::init_editor(&mut ed);
             edrow.end();
             tabs.end();
             tabs.auto_layout();

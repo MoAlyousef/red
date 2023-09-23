@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::state::STATE;
 use fltk::{prelude::*, *};
 use std::cell::RefCell;
@@ -10,7 +12,7 @@ pub struct FindDialog {
 impl FindDialog {
     pub fn new() -> Self {
         let idx = Rc::from(RefCell::from(0));
-        let mut win = window::Window::new(0, 0, 300, 50, "Find");
+        let mut win = window::Window::new(0, 0, 300, 50, "Find").with_id("find");
         win.set_border(false);
         let mut row = group::Flex::default_fill();
         row.set_margin(10);
@@ -46,16 +48,7 @@ impl FindDialog {
         row.fixed(&b, 60);
         row.end();
         win.end();
-        win.set_callback(|w| {
-            window::Window::delete(w.clone());
-        });
         Self { win }
-    }
-    pub fn show(&mut self) {
-        let win = app::first_window().unwrap();
-        self.win
-            .resize(win.x() + win.w() - 300, win.y() + 30, 300, 50);
-        self.win.show();
     }
 }
 
@@ -65,7 +58,7 @@ pub struct ReplaceDialog {
 
 impl ReplaceDialog {
     pub fn new() -> Self {
-        let mut win = window::Window::new(0, 0, 300, 80, "Replace");
+        let mut win = window::Window::new(0, 0, 300, 80, "Replace").with_id("replace");
         win.set_border(false);
         let mut col = group::Flex::default_fill().column();
         col.set_margin(5);
@@ -97,15 +90,6 @@ impl ReplaceDialog {
         row.end();
         col.end();
         win.end();
-        win.set_callback(|w| {
-            window::Window::delete(w.clone());
-        });
         Self { win }
-    }
-    pub fn show(&mut self) {
-        let win = app::first_window().unwrap();
-        self.win
-            .resize(win.x() + win.w() - 300, win.y() + 30, 300, 80);
-        self.win.show();
     }
 }

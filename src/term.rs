@@ -21,9 +21,9 @@ impl AnsiTerm {
         st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 64,
+                cols: 16,
                 rows: 16,
-                pixel_width: 64 * 10,
+                pixel_width: 16 * 10,
                 pixel_height: 16 * 16,
             })
             .unwrap();

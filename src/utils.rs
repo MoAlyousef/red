@@ -1,9 +1,8 @@
-use crate::dialogs;
 use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
 use std::{env, path::PathBuf};
 
-pub fn init_menu(m: &mut menu::SysMenuBar) {
+pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
     m.add(
         "&File/New...\t",
         Shortcut::Ctrl | 'n',
@@ -34,7 +33,7 @@ pub fn init_menu(m: &mut menu::SysMenuBar) {
         menu::MenuFlag::Normal,
         menu_cb,
     );
-    m.at(idx).unwrap().set_label_color(Color::Red);
+    m.at(idx).unwrap().set_label_color(Color::Selection);
     m.add(
         "&Edit/Cut\t",
         Shortcut::Ctrl | 'x',
@@ -90,6 +89,15 @@ pub fn init_menu(m: &mut menu::SysMenuBar) {
     );
 }
 
+pub fn init_editor(ed: &mut text::TextEditor) {
+    ed.set_linenumber_width(40);
+    ed.set_linenumber_size(12);
+    ed.set_linenumber_fgcolor(Color::Yellow);
+    ed.set_text_font(Font::Courier);
+    ed.set_trigger(CallbackTrigger::Changed);
+    ed.set_callback(editor_cb);
+}
+
 fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
     let mut nfc = dialog::NativeFileChooser::new(mode);
     nfc.show();
@@ -103,12 +111,16 @@ fn close_app() {
 }
 
 fn find() {
-    let mut dlg = dialogs::FindDialog::new();
+    let mut dlg: window::Window = app::widget_from_id("find").unwrap();
+    let main_win = app::first_window().unwrap();
+    dlg.resize(main_win.x() + main_win.w() - 300, dlg.y() + 30, 300, 50);
     dlg.show();
 }
 
 fn replace() {
-    let mut dlg = dialogs::ReplaceDialog::new();
+    let mut dlg: window::Window = app::widget_from_id("replace").unwrap();
+    let main_win = app::first_window().unwrap();
+    dlg.resize(main_win.x() + main_win.w() - 300, dlg.y() + 30, 300, 80);
     dlg.show();
 }
 
@@ -122,7 +134,7 @@ pub fn editor_cb(_e: &mut text::TextEditor) {
     STATE.with(|s| s.was_modified(true));
 }
 
-pub fn menu_cb(m: &mut menu::SysMenuBar) {
+pub fn menu_cb(m: &mut impl MenuExt) {
     if let Ok(mpath) = m.item_pathname(None) {
         match mpath.as_str() {
             "&File/New...\t" => {
@@ -133,7 +145,7 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
             "&File/Open...\t" => {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseFile);
                 STATE.with(move |s| {
-                    s.append(Some(c.clone()));
+                    s.append(Some(c.canonicalize().unwrap()));
                 });
             }
             "&File/Save\t" => {
@@ -203,7 +215,7 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 env::set_current_dir(cwd.join(path)).unwrap();
             } else {
                 STATE.with(move |s| {
-                    s.append(Some(path.clone()));
+                    s.append(Some(path.canonicalize().unwrap()));
                 });
             }
         }
@@ -227,14 +239,16 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
 
 #[cfg(feature = "portable-pty")]
 pub fn init_term(term: &crate::term::AnsiTerm, current_path: PathBuf) {
+    const CLEAR: &str = if cfg!(target_os = "windows") { "cls" } else { "clear" };
     if current_path.exists() {
         let mut writer1 = term.writer1.lock().unwrap();
         if current_path.is_dir() {
             writer1
                 .write_all(
                     format!(
-                        "cd {}\nclear\n",
-                        current_path.canonicalize().unwrap().display()
+                        "cd {}\n{}\n",
+                        current_path.canonicalize().unwrap().display(),
+                        CLEAR
                     )
                     .as_bytes(),
                 )
@@ -243,13 +257,14 @@ pub fn init_term(term: &crate::term::AnsiTerm, current_path: PathBuf) {
             writer1
                 .write_all(
                     format!(
-                        "cd {}\nclear\n",
+                        "cd {}\n{}\n",
                         current_path
                             .canonicalize()
                             .unwrap()
                             .parent()
                             .unwrap()
-                            .display()
+                            .display(),
+                        CLEAR
                     )
                     .as_bytes(),
                 )
