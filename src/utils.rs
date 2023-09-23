@@ -80,20 +80,8 @@ fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
 }
 
 fn close_app() {
-    STATE.with(|s| {
-        if !s.modified {
-            app::quit();
-        } else {
-            let c = dialog::choice2_default(
-                "Are you sure you want to exit without saving?",
-                "Yes",
-                "No",
-                "",
-            );
-            if c == Some(0) {
-                app::quit();
-            }
-        }
+    STATE.with(|_| {
+        app::quit();
     });
 }
 
@@ -121,36 +109,21 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
     if let Ok(mpath) = m.item_pathname(None) {
         let ed: text::TextEditor = app::widget_from_id("ed").unwrap();
         match mpath.as_str() {
-            "&File/New\t" => {
+            "&File/New...\t" => {
                 STATE.with(|s| {
-                    if !s.buf.text().is_empty() {
-                        let c = dialog::choice2_default(
-                            "Are you sure you want to clear the buffer?",
-                            "Yes",
-                            "No",
-                            "",
-                        );
-                        if c == Some(0) {
-                            s.buf.set_text("");
-                            s.was_modified(false);
-                        }
-                    }
+                    s.append(None);
                 });
             }
             "&File/Open...\t" => {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseFile);
-                if let Ok(text) = std::fs::read_to_string(&c) {
-                    STATE.with(move |s| {
-                        s.buf.set_text(&text);
-                        s.was_modified(false);
-                        s.current_file = c.clone();
-                    });
-                }
+                STATE.with(move |s| {
+                    s.append(Some(c.clone()));
+                });
             }
             "&File/Save\t" => {
                 STATE.with(|s| {
-                    if s.modified && s.current_file.exists() {
-                        std::fs::write(&s.current_file, s.buf.text()).ok();
+                    if s.modified() && s.current_file().unwrap().exists() {
+                        std::fs::write(s.current_file().unwrap(), s.buf().text()).ok();
                         s.was_modified(false);
                     }
                 });
@@ -159,7 +132,7 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseSaveFile);
                 if c.exists() {
                     STATE.with(move |s| {
-                        std::fs::write(&c, s.buf.text()).expect("Failed to write to file!");
+                        std::fs::write(&c, s.buf().text()).expect("Failed to write to file!");
                         s.was_modified(false);
                     });
                 }
@@ -180,37 +153,15 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
 
 pub fn fbr_cb(f: &mut browser::FileBrowser) {
     if let Some(path) = f.text(f.value()) {
-        let path0 = path.clone();
         let path = PathBuf::from(path);
         if path.exists() {
-            if path.is_dir() && app::event_clicks() {
+            if path.is_dir() {
                 f.load(path.clone()).expect("Couldn't load directory!");
                 let cwd = env::current_dir().unwrap();
                 env::set_current_dir(cwd.join(path)).unwrap();
-            } else if let Ok(text) = std::fs::read_to_string(&path) {
-                let mut tab: group::Flex = app::widget_from_id("edrow").unwrap();
+            } else {
                 STATE.with(move |s| {
-                    if s.modified {
-                        let c = dialog::choice2_default(
-                            "Are you sure you want to exit without saving?",
-                            "Yes",
-                            "No",
-                            "",
-                        );
-                        if c == Some(0) {
-                            s.buf.set_text(&text);
-                            s.current_file = path.clone();
-                            s.was_modified(false);
-                            tab.set_label(&path0);
-                            app::redraw();
-                        }
-                    } else {
-                        s.buf.set_text(&text);
-                        s.current_file = path.clone();
-                        s.was_modified(false);
-                        tab.set_label(&path0);
-                        app::redraw();
-                    }
+                    s.append(Some(path.clone()));
                 });
             }
         }
@@ -219,8 +170,11 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
 
 pub fn tab_close_cb(g: &mut impl GroupExt) {
     if app::callback_reason() == CallbackReason::Closed {
+        let ed: text::TextEditor = unsafe { g.child(0).unwrap().into_widget() };
+        let buf = ed.buffer().unwrap();
         let mut parent = g.parent().unwrap();
         parent.remove(g);
+        unsafe { text::TextBuffer::delete(buf); }
         app::redraw();
     }
 }
