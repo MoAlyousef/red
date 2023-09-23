@@ -48,46 +48,67 @@ impl State {
         State { map, current_dir }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
-        let old_count = COUNT.load(Ordering::Relaxed);
-        let id = format!("edrow{}", old_count);
-        COUNT.store(old_count + 1, Ordering::Relaxed);
-        let mut buf = text::TextBuffer::default();
-        if let Some(p) = current_path.as_ref() {
-            buf.load_file(p).ok();
-        }
+        let mut open = false;
         let mut tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
-        tabs.begin();
-        let mut edrow = group::Flex::default()
-            .row()
-            .with_label(if let Some(current_path) = current_path.as_ref() {
-                if current_path.is_dir() {
-                    "untitled"
+        let mut edid = 0;
+        for (k, v) in &self.map {
+            if v.current_file == current_path {
+                open = true;
+                edid = *k;
+                break;
+            }
+        }
+        if !open {
+            let old_count = COUNT.load(Ordering::Relaxed);
+            let id = format!("edrow{}", old_count);
+            COUNT.store(old_count + 1, Ordering::Relaxed);
+            let mut buf = text::TextBuffer::default();
+            if let Some(p) = current_path.as_ref() {
+                buf.load_file(p).ok();
+            }
+            tabs.begin();
+            let mut edrow = group::Flex::default()
+                .row()
+                .with_label(if let Some(current_path) = current_path.as_ref() {
+                    if current_path.is_dir() {
+                        "untitled"
+                    } else {
+                        current_path.file_name().unwrap().to_str().unwrap()
+                    }
                 } else {
-                    current_path.file_name().unwrap().to_str().unwrap()
-                }
-            } else {
-                "untitled"
-            })
-            .with_id(&id);
-        edrow.set_trigger(CallbackTrigger::Closed);
-        edrow.set_callback(crate::utils::tab_close_cb);
-        let mut ed = text::TextEditor::default().with_id("ed");
-        ed.set_linenumber_width(40);
-        ed.set_text_font(Font::Courier);
-        ed.set_buffer(buf.clone());
-        ed.set_trigger(CallbackTrigger::Changed);
-        ed.set_callback(crate::utils::editor_cb);
-        edrow.end();
-        tabs.end();
-        tabs.auto_layout();
-        tabs.set_value(&edrow).ok();
-        let mybuf = MyBuffer {
-            modified: false,
-            id,
-            buf,
-            current_file: current_path,
-        };
-        self.map.insert(ed.as_widget_ptr() as usize, mybuf);
+                    "untitled"
+                })
+                .with_id(&id);
+            edrow.set_trigger(CallbackTrigger::Closed);
+            edrow.set_callback(crate::utils::tab_close_cb);
+            let mut ed = text::TextEditor::default().with_id("ed");
+            ed.set_linenumber_width(40);
+            ed.set_text_font(Font::Courier);
+            ed.set_buffer(buf.clone());
+            ed.set_trigger(CallbackTrigger::Changed);
+            ed.set_callback(crate::utils::editor_cb);
+            edrow.end();
+            tabs.end();
+            tabs.auto_layout();
+            tabs.set_value(&edrow).ok();
+            let mybuf = MyBuffer {
+                modified: false,
+                id,
+                buf,
+                current_file: current_path,
+            };
+            self.map.insert(ed.as_widget_ptr() as usize, mybuf);
+        } else {
+            unsafe {
+                tabs.set_value(
+                    &text::TextEditor::from_widget_ptr(edid as *mut _)
+                        .parent()
+                        .unwrap(),
+                )
+                .ok();
+                app::redraw();
+            }
+        }
     }
     pub fn current_id(&self) -> usize {
         let tabs: group::Tabs = app::widget_from_id("tabs").unwrap();

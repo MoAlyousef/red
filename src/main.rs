@@ -68,7 +68,7 @@ fn main() {
         .with_id("edrow");
     edrow.set_trigger(CallbackTrigger::Closed);
     edrow.set_callback(utils::tab_close_cb);
-    let mut ed = text::TextEditor::default().with_id("ed");
+    let mut ed = text::TextEditor::default();
     ed.set_linenumber_width(40);
     ed.set_text_font(Font::Courier);
     ed.set_buffer(buf.clone());
