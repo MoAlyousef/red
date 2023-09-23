@@ -214,12 +214,14 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
 pub fn tab_close_cb(g: &mut impl GroupExt) {
     if app::callback_reason() == CallbackReason::Closed {
         let ed: text::TextEditor = unsafe { g.child(0).unwrap().into_widget() };
+        let edid = ed.as_widget_ptr() as usize;
         let buf = ed.buffer().unwrap();
         let mut parent = g.parent().unwrap();
         parent.remove(g);
         unsafe {
             text::TextBuffer::delete(buf);
         }
+        STATE.with(move |s| s.map.remove(&edid));
         app::redraw();
     }
 }
