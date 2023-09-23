@@ -154,7 +154,7 @@ impl State {
         let mybuf = self.map.get_mut(&current_id).unwrap();
         mybuf.current_file = Some(path)
     }
-    pub fn current_ed(&self) -> text::TextEditor {
+    pub fn current_editor(&self) -> text::TextEditor {
         let tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
         // TODO: Check if tabs empty
         unsafe { tabs.value().unwrap().child(0).unwrap().into_widget() }

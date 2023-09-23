@@ -29,7 +29,7 @@ impl FindDialog {
                             let v: Vec<_> = text.match_indices(&val).collect();
                             let mut idx = idx.borrow_mut();
                             let curr = v[*idx];
-                            let mut ed: text::TextEditor = s.current_ed();
+                            let mut ed: text::TextEditor = s.current_editor();
                             s.buf().select(curr.0 as i32, (curr.0 + val.len()) as i32);
                             ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
                             *idx += 1;

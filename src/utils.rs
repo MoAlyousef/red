@@ -124,7 +124,6 @@ pub fn editor_cb(_e: &mut text::TextEditor) {
 
 pub fn menu_cb(m: &mut menu::SysMenuBar) {
     if let Ok(mpath) = m.item_pathname(None) {
-        let ed: text::TextEditor = app::widget_from_id("ed").unwrap();
         match mpath.as_str() {
             "&File/New...\t" => {
                 STATE.with(|s| {
@@ -155,9 +154,9 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
                 }
             }
             "&File/Quit\t" => close_app(),
-            "&Edit/Cut\t" => ed.cut(),
-            "&Edit/Copy\t" => ed.copy(),
-            "&Edit/Paste\t" => ed.paste(),
+            "&Edit/Cut\t" => STATE.with(|s| s.current_editor().cut()),
+            "&Edit/Copy\t" => STATE.with(|s| s.current_editor().copy()),
+            "&Edit/Paste\t" => STATE.with(|s| s.current_editor().paste()),
             "&Edit/Find\t" => find(),
             "&Edit/Replace\t" => replace(),
             "&View/File browser\t" => {
