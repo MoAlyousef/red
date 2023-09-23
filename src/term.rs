@@ -73,14 +73,15 @@ fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
 
 fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
     // handles the sticky title-bell sequence
-    if let Some(pos0) = msg.windows(4).position(|m| m == b"\x1b]0;") {
-        let mut pos1 = pos0;
-        while pos1 < msg.len() && msg[pos1] != b'[' {
-            pos1 += 1;
-        }
-        st.append2(&msg[0..pos0]);
-        st.append2(&msg[pos1 - 1..]);
-    } else if msg == b"\x07" {
+    // if let Some(pos0) = msg.windows(4).position(|m| m == b"\x1b]0;") {
+    //     let mut pos1 = pos0;
+    //     while pos1 < msg.len() && msg[pos1] != b'[' {
+    //         pos1 += 1;
+    //     }
+    //     st.append2(&msg[0..pos0]);
+    //     st.append2(&msg[pos1 - 1..]);
+    // } else 
+    if msg == b"\x07" {
         //
     } else {
         st.append2(msg);
