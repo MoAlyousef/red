@@ -65,6 +65,23 @@ pub fn init_menu(m: &mut menu::SysMenuBar) {
         menu::MenuFlag::Normal,
         menu_cb,
     );
+    let idx = m.add(
+        "&View/File browser\t",
+        Shortcut::Ctrl | 'f',
+        menu::MenuFlag::Toggle,
+        menu_cb,
+    );
+    m.at(idx).unwrap().set();
+    #[cfg(feature = "portable-pty")]
+    {
+        let idx = m.add(
+            "&View/Terminal\t",
+            Shortcut::Ctrl | 'h',
+            menu::MenuFlag::Toggle,
+            menu_cb,
+        );
+        m.at(idx).unwrap().set();
+    }
     m.add(
         "&Help/About\t",
         Shortcut::None,
@@ -143,10 +160,36 @@ pub fn menu_cb(m: &mut menu::SysMenuBar) {
             "&Edit/Paste\t" => ed.paste(),
             "&Edit/Find\t" => find(),
             "&Edit/Replace\t" => replace(),
+            "&View/File browser\t" => {
+                let mut item = m.at(m.value()).unwrap();
+                let fbr: browser::FileBrowser = app::widget_from_id("fbr").unwrap();
+                let mut parent: group::Flex = unsafe { fbr.parent().unwrap().into_widget() };
+                if !item.value() {
+                    parent.fixed(&fbr, 1);
+                    item.clear();
+                } else {
+                    parent.fixed(&fbr, 180);
+                    item.set();
+                }
+                app::redraw();
+            }
+            "&View/Terminal\t" => {
+                let mut item = m.at(m.value()).unwrap();
+                let term: text::SimpleTerminal = app::widget_from_id("term").unwrap();
+                let mut parent: group::Flex = unsafe { term.parent().unwrap().into_widget() };
+                if !item.value() {
+                    parent.fixed(&term, 1);
+                    item.clear();
+                } else {
+                    parent.fixed(&term, 160);
+                    item.set();
+                }
+                app::redraw();
+            }
             "&Help/About\t" => {
                 dialog::message_default("A minimal text editor written using fltk-rs!")
             }
-            _ => unreachable!(),
+            _ => (),
         }
     }
 }
@@ -174,7 +217,9 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
         let buf = ed.buffer().unwrap();
         let mut parent = g.parent().unwrap();
         parent.remove(g);
-        unsafe { text::TextBuffer::delete(buf); }
+        unsafe {
+            text::TextBuffer::delete(buf);
+        }
         app::redraw();
     }
 }

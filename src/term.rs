@@ -16,7 +16,7 @@ impl Default for AnsiTerm {
 
 impl AnsiTerm {
     pub fn new<L: Into<Option<&'static str>>>(x: i32, y: i32, w: i32, h: i32, label: L) -> Self {
-        let mut st = text::SimpleTerminal::new(x, y, w, h, label);
+        let mut st = text::SimpleTerminal::new(x, y, w, h, label).with_id("term");
         // SimpleTerminal handles many common ansi escape sequence
         st.set_ansi(true);
         let pair = native_pty_system()

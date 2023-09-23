@@ -9,7 +9,7 @@ use crate::state::State;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
-const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 0 } else { 30 };
+const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -33,7 +33,9 @@ fn main() {
     utils::init_menu(&mut m);
     col.fixed(&m, MENU_HEIGHT);
     let mut row = group::Flex::default();
-    let mut fbr = browser::FileBrowser::default().with_type(browser::BrowserType::Hold);
+    let mut fbr = browser::FileBrowser::default()
+        .with_type(browser::BrowserType::Hold)
+        .with_id("fbr");
     if current_path.exists() {
         if current_path.is_dir() {
             #[allow(clippy::redundant_clone)]
