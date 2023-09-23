@@ -1,5 +1,7 @@
 use fltk::{enums::*, prelude::*, *};
+use fltk_theme::{color_themes, ColorTheme};
 use std::{env, path::PathBuf};
+
 mod dialogs;
 mod state;
 #[cfg(feature = "portable-pty")]
@@ -18,8 +20,10 @@ fn main() {
     } else {
         env::current_dir().unwrap()
     };
+
     let a = app::App::default().with_scheme(app::Scheme::Oxy);
-    app::get_system_colors();
+    let theme = ColorTheme::new(color_themes::BLACK_THEME);
+    theme.apply();
 
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);

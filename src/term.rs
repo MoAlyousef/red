@@ -80,7 +80,7 @@ fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
     //     }
     //     st.append2(&msg[0..pos0]);
     //     st.append2(&msg[pos1 - 1..]);
-    // } else 
+    // } else
     if msg == b"\x07" {
         //
     } else {
