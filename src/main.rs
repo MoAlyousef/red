@@ -42,10 +42,10 @@ fn main() {
         .with_size(WIDTH, HEIGHT)
         .with_label("RustyEd");
     w.set_xclass("red");
-    let mut col = group::Flex::default_fill().column();
+    let mut col0 = group::Flex::default_fill().column();
     let mut m = menu::SysMenuBar::default().with_id("menu");
     utils::init_menu(&mut m);
-    col.fixed(&m, MENU_HEIGHT);
+    col0.fixed(&m, MENU_HEIGHT);
     let mut row = group::Flex::default();
     let mut fbr = browser::FileBrowser::default()
         .with_type(browser::BrowserType::Hold)
@@ -94,8 +94,16 @@ fn main() {
     }
     col.end();
     row.end();
+    let info = frame::Frame::default()
+        .with_label(&format!(
+            "Directory: {}",
+            current_path.canonicalize().unwrap().display()
+        ))
+        .with_align(enums::Align::Left | enums::Align::Inside)
+        .with_id("info");
+    col0.fixed(&info, 20);
+    col0.end();
     w.resizable(&row);
-    col.end();
     w.end();
     w.make_resizable(true);
     w.show();

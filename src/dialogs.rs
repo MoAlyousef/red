@@ -100,12 +100,12 @@ pub struct ImageDialog {
 
 impl ImageDialog {
     pub fn new() -> Self {
-        let mut win = window::Window::default().with_size(400, 300).with_id("image_dialog");
+        let mut win = window::Window::default()
+            .with_size(400, 300)
+            .with_id("image_dialog");
         let mut f = frame::Frame::default_fill();
         win.end();
         win.resize_callback(move |_win, _, _, w, h| f.resize(0, 0, w, h));
-        Self {
-            win
-        }
+        Self { win }
     }
 }

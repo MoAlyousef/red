@@ -24,6 +24,12 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
     m.add(
         "&File/Save as...\t",
         Shortcut::Ctrl | 'w',
+        menu::MenuFlag::Normal,
+        menu_cb,
+    );
+    m.add(
+        "&File/Save All\t",
+        Shortcut::Ctrl | 'w',
         menu::MenuFlag::MenuDivider,
         menu_cb,
     );
@@ -163,8 +169,11 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&File/Save\t" => {
                 STATE.with(|s| {
-                    if s.modified() && s.current_file().unwrap().exists() {
-                        std::fs::write(s.current_file().unwrap(), s.buf().text()).ok();
+                    let modified = s.modified();
+                    let current_file = s.current_file().unwrap();
+                    let buf = s.buf();
+                    if modified && current_file.exists() {
+                        std::fs::write(current_file, buf.text()).ok();
                         s.was_modified(false);
                     }
                 });
@@ -178,9 +187,19 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                     });
                 }
             }
+            "&File/Save All\t" => {
+                STATE.with(|s| {
+                    for v in s.map.values_mut() {
+                        if v.modified && v.current_file.as_ref().unwrap().exists() {
+                            std::fs::write(v.current_file.as_ref().unwrap(), v.buf.text()).ok();
+                            v.modified = true;
+                        }
+                    }
+                });
+            }
             "&File/Quit\t" => close_app(),
             "&Edit/Undo\t" => STATE.with(|s| s.current_editor().undo()),
-            "&Edit/Redo\t" => STATE.with(|s| { 
+            "&Edit/Redo\t" => STATE.with(|s| {
                 if let Ok(pos) = s.buf().redo() {
                     s.current_editor().set_insert_position(pos);
                 }
@@ -232,6 +251,9 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 f.load(path.clone()).expect("Couldn't load directory!");
                 let cwd = env::current_dir().unwrap();
                 env::set_current_dir(cwd.join(path)).unwrap();
+                let mut info: frame::Frame = app::widget_from_id("info").unwrap();
+                info.set_label(&format!("Directory: {}", env::current_dir().unwrap().display()));
+                app::redraw();
             } else {
                 let mut is_image = false;
                 if let Some(ext) = path.extension() {
