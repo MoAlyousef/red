@@ -252,7 +252,10 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 let cwd = env::current_dir().unwrap();
                 env::set_current_dir(cwd.join(path)).unwrap();
                 let mut info: frame::Frame = app::widget_from_id("info").unwrap();
-                info.set_label(&format!("Directory: {}", env::current_dir().unwrap().display()));
+                info.set_label(&format!(
+                    "Directory: {}",
+                    env::current_dir().unwrap().display()
+                ));
                 app::redraw();
             } else {
                 let mut is_image = false;

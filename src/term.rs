@@ -23,10 +23,10 @@ impl AnsiTerm {
         st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 80,
-                rows: 16,
-                pixel_width: 24 * 10,
-                pixel_height: 16 * 16,
+                cols: 120,
+                rows: 30,
+                pixel_width: 0,
+                pixel_height: 0,
             })
             .unwrap();
 
@@ -83,15 +83,13 @@ fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
         }
         let pre = &msg[0..pos0];
         let post = &msg[pos1..];
-        if pre.len() > 0 {
+        if !pre.is_empty() {
             st.append(&String::from_utf8(pre.to_vec()).unwrap());
         }
-        if post.len() > 0 {
+        if !post.is_empty() {
             st.append2(post);
         }
-    } else if msg == b"\x07" {
-        //
-    } else {
+    } else if msg != b"\x07" {
         st.append2(msg);
     }
 }
