@@ -16,7 +16,9 @@ const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 fn main() {
     let args: Vec<_> = env::args().collect();
     let current_path = if args.len() > 1 {
-        PathBuf::from(args[1].clone())
+        let path = PathBuf::from(args[1].clone());
+        env::set_current_dir(path.clone()).unwrap();
+        path
     } else {
         env::current_dir().unwrap()
     };
@@ -74,7 +76,6 @@ fn main() {
         })
         .with_id("edrow");
     edrow.set_trigger(CallbackTrigger::Closed);
-    edrow.set_callback(utils::tab_close_cb);
     let mut ed = text::TextEditor::default();
     ed.set_buffer(buf.clone());
     utils::init_editor(&mut ed);
@@ -83,18 +84,20 @@ fn main() {
     tabs.auto_layout();
     #[cfg(feature = "portable-pty")]
     {
-        let term = crate::term::AnsiTerm::default();
-        utils::init_term(&term, current_path.clone());
+        let term = crate::term::AnsiTerm::new(0, 0, 0, 0, None, current_path.clone());
         col.fixed(&*term, 160);
     }
     col.end();
     row.end();
-    fbr.set_callback(utils::fbr_cb);
     w.resizable(&row);
     col.end();
     w.end();
     w.make_resizable(true);
     w.show();
+
+    // callbacks
+    fbr.set_callback(utils::fbr_cb);
+    edrow.set_callback(utils::tab_close_cb);
     w.set_callback(utils::win_cb);
 
     let state = State::new(&ed, buf, current_path, None, "edrow");

@@ -214,9 +214,29 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 let cwd = env::current_dir().unwrap();
                 env::set_current_dir(cwd.join(path)).unwrap();
             } else {
-                STATE.with(move |s| {
-                    s.append(Some(path.canonicalize().unwrap()));
-                });
+                let mut is_image = false;
+                if let Some(ext) = path.extension() {
+                    match ext.to_str().unwrap() {
+                        "jpg" | "gif" | "png" | "bmp" => is_image = true,
+                        _ => (),
+                    }
+                }
+                if is_image {
+                    let img = image::SharedImage::load(path.clone()).unwrap();
+                    let mut win = window::Window::default().with_size(img.w(), img.h());
+                    let mut f = frame::Frame::default_fill();
+                    f.set_image(Some(img));
+                    win.end();
+                    win.set_callback(|w| {
+                        let w = w.clone();
+                        window::Window::delete(w);
+                    });
+                    win.show();
+                } else {
+                    STATE.with(move |s| {
+                        s.append(Some(path.canonicalize().unwrap()));
+                    });
+                }
             }
         }
     }
@@ -234,41 +254,5 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
         }
         STATE.with(move |s| s.map.remove(&edid));
         app::redraw();
-    }
-}
-
-#[cfg(feature = "portable-pty")]
-pub fn init_term(term: &crate::term::AnsiTerm, current_path: PathBuf) {
-    const CLEAR: &str = if cfg!(target_os = "windows") { "cls" } else { "clear" };
-    if current_path.exists() {
-        let mut writer1 = term.writer1.lock().unwrap();
-        if current_path.is_dir() {
-            writer1
-                .write_all(
-                    format!(
-                        "cd {}\n{}\n",
-                        current_path.canonicalize().unwrap().display(),
-                        CLEAR
-                    )
-                    .as_bytes(),
-                )
-                .unwrap();
-        } else {
-            writer1
-                .write_all(
-                    format!(
-                        "cd {}\n{}\n",
-                        current_path
-                            .canonicalize()
-                            .unwrap()
-                            .parent()
-                            .unwrap()
-                            .display(),
-                        CLEAR
-                    )
-                    .as_bytes(),
-                )
-                .unwrap();
-        }
     }
 }

@@ -1,6 +1,7 @@
 use fltk::{enums::*, prelude::*, *};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 pub struct AnsiTerm {
@@ -8,33 +9,35 @@ pub struct AnsiTerm {
     pub writer1: Arc<Mutex<Box<dyn std::io::Write + Send>>>,
 }
 
-impl Default for AnsiTerm {
-    fn default() -> Self {
-        AnsiTerm::new(0, 0, 0, 0, None)
-    }
-}
-
 impl AnsiTerm {
-    pub fn new<L: Into<Option<&'static str>>>(x: i32, y: i32, w: i32, h: i32, label: L) -> Self {
+    pub fn new<L: Into<Option<&'static str>>>(
+        x: i32,
+        y: i32,
+        w: i32,
+        h: i32,
+        label: L,
+        current_path: PathBuf,
+    ) -> Self {
         let mut st = text::SimpleTerminal::new(x, y, w, h, label).with_id("term");
         // SimpleTerminal handles many common ansi escape sequence
         st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 16,
+                cols: 80,
                 rows: 16,
-                pixel_width: 16 * 10,
+                pixel_width: 24 * 10,
                 pixel_height: 16 * 16,
             })
             .unwrap();
 
-        let cmd = if cfg!(target_os = "windows") {
+        let mut cmd = if cfg!(target_os = "windows") {
             CommandBuilder::new("cmd.exe")
         } else {
             let mut cmd = CommandBuilder::new("/bin/bash");
             cmd.args(["-i"]);
             cmd
         };
+        cmd.cwd(current_path);
 
         let mut child = pair.slave.spawn_command(cmd).unwrap();
         let writer = Arc::new(Mutex::new(pair.master.take_writer().unwrap()));
@@ -73,15 +76,20 @@ fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
 
 fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
     // handles the sticky title-bell sequence
-    // if let Some(pos0) = msg.windows(4).position(|m| m == b"\x1b]0;") {
-    //     let mut pos1 = pos0;
-    //     while pos1 < msg.len() && msg[pos1] != b'[' {
-    //         pos1 += 1;
-    //     }
-    //     st.append2(&msg[0..pos0]);
-    //     st.append2(&msg[pos1 - 1..]);
-    // } else
-    if msg == b"\x07" {
+    if let Some(pos0) = msg.windows(4).position(|m| m == b"\x1b]0;") {
+        let mut pos1 = pos0 + 1;
+        while pos1 < msg.len() - 1 && msg[pos1] != b'\x1b' {
+            pos1 += 1;
+        }
+        let pre = &msg[0..pos0];
+        let post = &msg[pos1..];
+        if pre.len() > 0 {
+            st.append(&String::from_utf8(pre.to_vec()).unwrap());
+        }
+        if post.len() > 0 {
+            st.append2(post);
+        }
+    } else if msg == b"\x07" {
         //
     } else {
         st.append2(msg);
