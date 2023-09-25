@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fltk = "1.4.13"
-fltk-theme = "0.7"
+fltk = { git = "https://github.com/fltk-rs/fltk-rs" }
+# fltk-theme = "0.7"
 portable-pty = { version = "0.8", optional = true }
 
 [profile.release]

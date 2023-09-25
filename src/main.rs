@@ -1,5 +1,5 @@
 use fltk::{enums::*, prelude::*, *};
-use fltk_theme::{color_themes, ColorTheme};
+// use fltk_theme::{color_themes, ColorTheme};
 use std::{env, path::PathBuf};
 
 mod dialogs;
@@ -24,14 +24,19 @@ fn main() {
     };
 
     let a = app::App::default().with_scheme(app::Scheme::Oxy);
-    let theme = ColorTheme::new(color_themes::BLACK_THEME);
-    theme.apply();
+    // let theme = ColorTheme::new(color_themes::BLACK_THEME);
+    // theme.apply();
+    app::set_background_color(55, 55, 55);
+    app::set_background2_color(0, 0, 0);
+    app::set_foreground_color(255, 255, 255);
+    app::set_color(Color::Selection, 255, 125, 125);
 
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
 
     let _find_dialog = crate::dialogs::FindDialog::new();
     let _replace_dialog = crate::dialogs::ReplaceDialog::new();
+    let _image_dialog = crate::dialogs::ImageDialog::new();
 
     let mut w = window::Window::default()
         .with_size(WIDTH, HEIGHT)

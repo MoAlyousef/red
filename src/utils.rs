@@ -35,6 +35,18 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
     );
     m.at(idx).unwrap().set_label_color(Color::Selection);
     m.add(
+        "&Edit/Udno\t",
+        Shortcut::Ctrl | 'z',
+        menu::MenuFlag::Normal,
+        menu_cb,
+    );
+    m.add(
+        "&Edit/Redo\t",
+        Shortcut::Ctrl | 'y',
+        menu::MenuFlag::MenuDivider,
+        menu_cb,
+    );
+    m.add(
         "&Edit/Cut\t",
         Shortcut::Ctrl | 'x',
         menu::MenuFlag::Normal,
@@ -93,6 +105,7 @@ pub fn init_editor(ed: &mut text::TextEditor) {
     ed.set_linenumber_width(40);
     ed.set_linenumber_size(12);
     ed.set_linenumber_fgcolor(Color::Yellow);
+    ed.set_linenumber_bgcolor(Color::Background);
     ed.set_text_font(Font::Courier);
     ed.set_trigger(CallbackTrigger::Changed);
     ed.set_callback(editor_cb);
@@ -166,6 +179,12 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 }
             }
             "&File/Quit\t" => close_app(),
+            "&Edit/Undo\t" => STATE.with(|s| s.current_editor().undo()),
+            "&Edit/Redo\t" => STATE.with(|s| { 
+                if let Ok(pos) = s.buf().redo() {
+                    s.current_editor().set_insert_position(pos);
+                }
+            }),
             "&Edit/Cut\t" => STATE.with(|s| s.current_editor().cut()),
             "&Edit/Copy\t" => STATE.with(|s| s.current_editor().copy()),
             "&Edit/Paste\t" => STATE.with(|s| s.current_editor().paste()),
@@ -223,14 +242,9 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 }
                 if is_image {
                     let img = image::SharedImage::load(path.clone()).unwrap();
-                    let mut win = window::Window::default().with_size(img.w(), img.h());
-                    let mut f = frame::Frame::default_fill();
-                    f.set_image(Some(img));
-                    win.end();
-                    win.set_callback(|w| {
-                        let w = w.clone();
-                        window::Window::delete(w);
-                    });
+                    let mut win: window::Window = app::widget_from_id("image_dialog").unwrap();
+                    win.resize(win.x(), win.y(), img.w(), img.h());
+                    win.child(0).unwrap().set_image(Some(img));
                     win.show();
                 } else {
                     STATE.with(move |s| {
