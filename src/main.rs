@@ -9,8 +9,8 @@ mod term;
 mod utils;
 use crate::state::State;
 
-const WIDTH: i32 = 800;
-const HEIGHT: i32 = 600;
+const WIDTH: i32 = 1000;
+const HEIGHT: i32 = 800;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 fn main() {
@@ -23,7 +23,7 @@ fn main() {
         env::current_dir().unwrap()
     };
 
-    let a = app::App::default().with_scheme(app::Scheme::Oxy);
+    let a = app::App::default().with_scheme(app::Scheme::Gtk);
     // let theme = ColorTheme::new(color_themes::BLACK_THEME);
     // theme.apply();
     app::set_background_color(55, 55, 55);
@@ -101,7 +101,7 @@ fn main() {
         ))
         .with_align(enums::Align::Left | enums::Align::Inside)
         .with_id("info");
-    col0.fixed(&info, 20);
+    col0.fixed(&info, 15);
     col0.end();
     w.resizable(&row);
     w.end();

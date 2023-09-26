@@ -41,7 +41,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
     );
     m.at(idx).unwrap().set_label_color(Color::Selection);
     m.add(
-        "&Edit/Udno\t",
+        "&Edit/Undo\t",
         Shortcut::Ctrl | 'z',
         menu::MenuFlag::Normal,
         menu_cb,
@@ -124,9 +124,7 @@ fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
 }
 
 fn close_app() {
-    STATE.with(|_| {
-        app::quit();
-    });
+    app::quit();
 }
 
 fn find() {
@@ -150,7 +148,7 @@ pub fn win_cb(_: &mut window::Window) {
 }
 
 pub fn editor_cb(_e: &mut text::TextEditor) {
-    STATE.with(|s| s.was_modified(true));
+    app::add_timeout3(0.01, |_| STATE.with(|s| s.was_modified(true)));
 }
 
 pub fn menu_cb(m: &mut impl MenuExt) {
@@ -163,9 +161,11 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&File/Open...\t" => {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseFile);
-                STATE.with(move |s| {
-                    s.append(Some(c.canonicalize().unwrap()));
-                });
+                if c.exists() {
+                    STATE.with(move |s| {
+                        s.append(Some(c.canonicalize().unwrap()));
+                    });
+                }
             }
             "&File/Save\t" => {
                 STATE.with(|s| {
@@ -199,11 +199,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&File/Quit\t" => close_app(),
             "&Edit/Undo\t" => STATE.with(|s| s.current_editor().undo()),
-            "&Edit/Redo\t" => STATE.with(|s| {
-                if let Ok(pos) = s.buf().redo() {
-                    s.current_editor().set_insert_position(pos);
-                }
-            }),
+            "&Edit/Redo\t" => STATE.with(|s| s.current_editor().redo()),
             "&Edit/Cut\t" => STATE.with(|s| s.current_editor().cut()),
             "&Edit/Copy\t" => STATE.with(|s| s.current_editor().copy()),
             "&Edit/Paste\t" => STATE.with(|s| s.current_editor().paste()),
@@ -238,7 +234,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             "&Help/About\t" => {
                 dialog::message_default("A minimal text editor written using fltk-rs!")
             }
-            _ => (),
+            _ => unreachable!(),
         }
     }
 }
