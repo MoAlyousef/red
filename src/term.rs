@@ -28,7 +28,7 @@ impl AnsiTerm {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .unwrap();
+            .expect("Failed to create pty");
 
         let mut cmd = if cfg!(target_os = "windows") {
             CommandBuilder::new("cmd.exe")
@@ -68,6 +68,7 @@ impl AnsiTerm {
             }
             _ => false,
         });
+        
         Self { st, writer1 }
     }
 }
@@ -84,7 +85,9 @@ fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
         let pre = &msg[0..pos0];
         let post = &msg[pos1..];
         if !pre.is_empty() {
-            st.append(&String::from_utf8(pre.to_vec()).unwrap());
+            if let Ok(s) = String::from_utf8(pre.to_vec()) {
+                st.append(&s);
+            }
         }
         if !post.is_empty() {
             st.append2(post);

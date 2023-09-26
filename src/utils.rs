@@ -169,12 +169,15 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&File/Save\t" => {
                 STATE.with(|s| {
-                    let modified = s.modified();
-                    let current_file = s.current_file().unwrap();
-                    let buf = s.buf();
-                    if modified && current_file.exists() {
-                        std::fs::write(current_file, buf.text()).ok();
-                        s.was_modified(false);
+                    if let Some(id) = s.current_id() {
+                        let e = s.map.get(&id).unwrap();
+                        let modified = e.modified;
+                        if let Some(current_file) = e.current_file.as_ref() {
+                            if modified && current_file.exists() {
+                                std::fs::write(current_file, e.buf.text()).ok();
+                                s.was_modified(false);
+                            }
+                        }
                     }
                 });
             }
@@ -182,8 +185,10 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseSaveFile);
                 if c.exists() {
                     STATE.with(move |s| {
-                        std::fs::write(&c, s.buf().text()).expect("Failed to write to file!");
-                        s.was_modified(false);
+                        if let Some(buf) = s.buf().as_ref() {
+                            std::fs::write(&c, buf.text()).expect("Failed to write to file!");
+                            s.was_modified(false);
+                        }
                     });
                 }
             }
@@ -198,11 +203,21 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 });
             }
             "&File/Quit\t" => close_app(),
-            "&Edit/Undo\t" => STATE.with(|s| s.current_editor().undo()),
-            "&Edit/Redo\t" => STATE.with(|s| s.current_editor().redo()),
-            "&Edit/Cut\t" => STATE.with(|s| s.current_editor().cut()),
-            "&Edit/Copy\t" => STATE.with(|s| s.current_editor().copy()),
-            "&Edit/Paste\t" => STATE.with(|s| s.current_editor().paste()),
+            "&Edit/Undo\t" => STATE.with(|s| {
+                s.current_editor().map(|e| e.undo());
+            }),
+            "&Edit/Redo\t" => STATE.with(|s| {
+                s.current_editor().map(|e| e.redo());
+            }),
+            "&Edit/Cut\t" => STATE.with(|s| {
+                s.current_editor().map(|e| e.cut());
+            }),
+            "&Edit/Copy\t" => STATE.with(|s| {
+                s.current_editor().map(|e| e.copy());
+            }),
+            "&Edit/Paste\t" => STATE.with(|s| {
+                s.current_editor().map(|e| e.paste());
+            }),
             "&Edit/Find\t" => find(),
             "&Edit/Replace\t" => replace(),
             "&View/File browser\t" => {
@@ -232,6 +247,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 app::redraw();
             }
             "&Help/About\t" => {
+                dialog::message_title("About");
                 dialog::message_default("A minimal text editor written using fltk-rs!")
             }
             _ => unreachable!(),
@@ -252,7 +268,7 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                     "Directory: {}",
                     env::current_dir().unwrap().display()
                 ));
-                app::redraw();
+                f.set_damage(true);
             } else {
                 let mut is_image = false;
                 if let Some(ext) = path.extension() {
@@ -288,6 +304,34 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
             text::TextBuffer::delete(buf);
         }
         STATE.with(move |s| s.map.remove(&edid));
-        app::redraw();
+        parent.set_damage(true);
+    }
+}
+
+pub fn tab_splitter_cb(f: &mut frame::Frame, ev: enums::Event) -> bool {
+    let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
+    let term: text::SimpleTerminal = app::widget_from_id("term").unwrap();
+    match ev {
+        enums::Event::Push => true,
+        enums::Event::Drag => {
+            parent.fixed(&term, parent.h() + parent.y() - app::event_y());
+            app::redraw();
+            true
+        }
+        _ => false,
+    }
+}
+
+pub fn fbr_splitter_cb(f: &mut frame::Frame, ev: enums::Event) -> bool {
+    let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
+    let fbr: browser::FileBrowser = app::widget_from_id("fbr").unwrap();
+    match ev {
+        enums::Event::Push => true,
+        enums::Event::Drag => {
+            parent.fixed(&fbr, app::event_x());
+            app::redraw();
+            true
+        }
+        _ => false,
     }
 }

@@ -104,58 +104,87 @@ impl State {
                         .unwrap(),
                 )
                 .ok();
-                app::redraw();
+                tabs.set_damage(true);
             }
         }
     }
-    pub fn current_id(&self) -> usize {
+    pub fn current_id(&self) -> Option<usize> {
         let tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
-        // TODO: Check if tabs empty
-        let ed = tabs.value().unwrap().child(0).unwrap();
-        ed.as_widget_ptr() as usize
+        if tabs.children() == 0 {
+            return None;
+        }
+        if let Some(ed) = tabs.value().unwrap().child(0) {
+            Some(ed.as_widget_ptr() as usize)
+        } else {
+            None
+        }
     }
     pub fn was_modified(&mut self, flag: bool) {
-        let current_id = self.current_id();
-        let mybuf = self.map.get_mut(&current_id).unwrap();
-        mybuf.modified = flag;
-        if mybuf.current_file.is_some() {
-            if !flag {
-                app::first_window().unwrap().set_label(&format!(
-                    "{} - RustyEd",
-                    mybuf.current_file.as_ref().unwrap().display()
-                ));
-            } else {
-                app::first_window().unwrap().set_label(&format!(
-                    "*{} - RustyEd",
-                    mybuf.current_file.as_ref().unwrap().display()
-                ));
+        let mut tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
+        if tabs.children() == 0 {
+            return;
+        }
+        let mut edrow = tabs.value().unwrap();
+        if let Some(c) = edrow.child(0) {
+            let id = c.as_widget_ptr() as usize;
+            let mybuf = self.map.get_mut(&id).unwrap();
+            mybuf.modified = flag;
+            if let Some(f) = mybuf.current_file.as_ref() {
+                if flag {
+                    edrow.set_label(&format!(
+                        "{} *",
+                        f.file_name().unwrap().to_str().unwrap()
+                    ));
+                } else {
+                    edrow.set_label(&format!(
+                        "{}",
+                        f.file_name().unwrap().to_str().unwrap()
+                    ));
+                }
+                tabs.redraw();
             }
         }
     }
     pub fn modified(&self) -> bool {
-        let current_id = self.current_id();
-        let mybuf = self.map.get(&current_id).unwrap();
-        mybuf.modified
+        if let Some(current_id) = self.current_id() {
+            let mybuf = self.map.get(&current_id).unwrap();
+            mybuf.modified
+        } else {
+            false
+        }
     }
-    pub fn buf(&self) -> text::TextBuffer {
-        let current_id = self.current_id();
-        let mybuf = self.map.get(&current_id).unwrap();
-        mybuf.buf.clone()
+    pub fn buf(&self) -> Option<text::TextBuffer> {
+        if let Some(current_id) = self.current_id() {
+            let mybuf = self.map.get(&current_id).unwrap();
+            Some(mybuf.buf.clone())
+        } else {
+            None
+        }
     }
     pub fn current_file(&self) -> Option<PathBuf> {
-        let current_id = self.current_id();
-        let mybuf = self.map.get(&current_id).unwrap();
-        mybuf.current_file.clone()
+        if let Some(current_id) = self.current_id() {
+            let mybuf = self.map.get(&current_id).unwrap();
+            mybuf.current_file.clone()
+        } else {
+            None
+        }
     }
     pub fn set_current_file(&mut self, path: PathBuf) {
-        let current_id = self.current_id();
-        let mybuf = self.map.get_mut(&current_id).unwrap();
-        mybuf.current_file = Some(path)
+        if let Some(current_id) = self.current_id() {
+            let mybuf = self.map.get_mut(&current_id).unwrap();
+            mybuf.current_file = Some(path)
+        }
     }
-    pub fn current_editor(&self) -> text::TextEditor {
+    pub fn current_editor(&self) -> Option<text::TextEditor> {
         let tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
-        // TODO: Check if tabs empty
-        unsafe { tabs.value().unwrap().child(0).unwrap().into_widget() }
+        if tabs.children() == 0 {
+            return None;
+        }
+        if let Some(c) = tabs.value().unwrap().child(0) {
+            unsafe { Some(c.into_widget()) }
+        } else {
+            None
+        }
     }
 }
 
