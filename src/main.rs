@@ -14,16 +14,27 @@ const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 fn main() {
     let args: Vec<_> = env::args().collect();
-    let current_path = if args.len() > 1 {
+    let mut current_file: Option<PathBuf> = None;
+    // fix our working dir
+    if args.len() > 1 {
         let path = PathBuf::from(args[1].clone());
-        env::set_current_dir(path.clone()).unwrap();
+        if path.exists() {
+            if path.is_dir() {
+                env::set_current_dir(path.clone()).unwrap();
+            } else {
+                current_file = Some(PathBuf::from(path.file_name().unwrap()));
+                env::set_current_dir(path.parent().unwrap()).unwrap();
+            }
+        }
         path
     } else {
         env::current_dir().unwrap()
     };
 
+    let current_path = env::current_dir().unwrap().canonicalize().unwrap();
+
     let a = app::App::default();
-    let theme = ColorTheme::new(color_themes::TAN_THEME);
+    let theme = ColorTheme::new(color_themes::DARK_THEME);
     theme.apply();
     let widget_scheme = WidgetScheme::new(SchemeType::Clean);
     widget_scheme.apply();
@@ -43,28 +54,17 @@ fn main() {
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
     let mut m = menu::SysMenuBar::default().with_id("menu");
-    utils::init_menu(&mut m);
+    utils::init_menu(&mut m, current_file.is_none());
     col0.fixed(&m, MENU_HEIGHT);
     let mut row = group::Flex::default();
     row.set_pad(0);
     let mut fbr = browser::FileBrowser::default()
         .with_type(browser::BrowserType::Hold)
         .with_id("fbr");
-    if current_path.exists() {
-        if current_path.is_dir() {
-            #[allow(clippy::redundant_clone)]
-            fbr.load(current_path.clone())
-                .expect("Not a valid directory!");
-            if args.len() < 2 {
-                row.fixed(&fbr, 1);
-            } else {
-                row.fixed(&fbr, 180);
-            }
-        } else {
-            buf.load_file(current_path.clone()).unwrap();
-            w.set_label(&format!("{} - RustyEd", current_path.display()));
-            row.fixed(&fbr, 1);
-        }
+    fbr.load(current_path.clone())
+        .expect("Failed to load working directory");
+    if current_file.is_none() {
+        row.fixed(&fbr, 180);
     } else {
         w.set_label(&format!("{} - RustyEd", current_path.display()));
         row.fixed(&fbr, 1);
@@ -75,37 +75,20 @@ fn main() {
     let mut col = group::Flex::default().column();
     col.set_pad(0);
     let mut tabs = group::Tabs::default().with_id("tabs");
-    let mut edrow = group::Flex::default()
-        .row()
-        .with_label(if current_path.is_dir() {
-            "untitled"
-        } else {
-            current_path.file_name().unwrap().to_str().unwrap()
-        })
-        .with_id("edrow");
-    edrow.set_pad(0);
-    edrow.set_trigger(CallbackTrigger::Closed);
-    let mut ed = text::TextEditor::default();
-    ed.set_buffer(buf.clone());
-    utils::init_editor(&mut ed);
-    edrow.end();
     tabs.end();
     tabs.auto_layout();
     let mut tab_splitter = frame::Frame::default();
     tab_splitter.handle(utils::tab_splitter_cb);
     col.fixed(&tab_splitter, 4);
-    let term = term::AnsiTerm::new(current_path.clone());
+    let term = term::AnsiTerm::new();
     col.fixed(&*term, 160);
     col.end();
     row.end();
     let info = frame::Frame::default()
-        .with_label(&format!(
-            "Directory: {}",
-            current_path.canonicalize().unwrap().display()
-        ))
+        .with_label(&format!("Directory: {}", current_path.display()))
         .with_align(enums::Align::Left | enums::Align::Inside)
         .with_id("info");
-    col0.fixed(&info, 15);
+    col0.fixed(&info, 20);
     col0.end();
     w.resizable(&row);
     w.end();
@@ -114,10 +97,10 @@ fn main() {
 
     // callbacks
     fbr.set_callback(utils::fbr_cb);
-    edrow.set_callback(utils::tab_close_cb);
     w.set_callback(utils::win_cb);
 
-    let state = state::State::new(&ed, buf, current_path, None, "edrow");
+    let mut state = state::State::new(current_path);
+    state.append(current_file);
     app::GlobalState::new(state);
 
     a.run().unwrap();

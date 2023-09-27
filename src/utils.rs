@@ -2,7 +2,7 @@ use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
 use std::{env, path::PathBuf};
 
-pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
+pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     m.add(
         "&File/New...\t",
         Shortcut::Ctrl | 'n',
@@ -88,7 +88,9 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
         menu::MenuFlag::Toggle,
         menu_cb,
     );
-    m.at(idx).unwrap().set();
+    if load_dir {
+        m.at(idx).unwrap().set();
+    }
     let idx = m.add(
         "&View/Terminal\t",
         Shortcut::Ctrl | 'h',
@@ -107,8 +109,8 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
 pub fn init_editor(ed: &mut text::TextEditor) {
     ed.set_linenumber_width(40);
     ed.set_linenumber_size(12);
-    // ed.set_linenumber_fgcolor(Color::Yellow);
-    // ed.set_linenumber_bgcolor(Color::Background);
+    ed.set_linenumber_fgcolor(Color::Yellow);
+    ed.set_linenumber_bgcolor(Color::Background);
     ed.set_text_font(Font::Courier);
     ed.set_trigger(CallbackTrigger::Changed);
     ed.set_callback(editor_cb);

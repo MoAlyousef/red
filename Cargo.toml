@@ -6,8 +6,6 @@ edition = "2021"
 [dependencies]
 fltk = "1.4.13"
 fltk-theme = "0.7"
-portable-pty = "0.8"
-
 
 [profile.release]
 strip = true

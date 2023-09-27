@@ -30,21 +30,8 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(
-        ed: &text::TextEditor,
-        buf: text::TextBuffer,
-        current_dir: PathBuf,
-        current_file: Option<PathBuf>,
-        id: &'static str,
-    ) -> Self {
-        let mybuf = MyBuffer {
-            modified: false,
-            id: id.to_string(),
-            buf,
-            current_file,
-        };
-        let mut map = HashMap::default();
-        map.insert(ed.as_widget_ptr() as usize, mybuf);
+    pub fn new(current_dir: PathBuf) -> Self {
+        let map = HashMap::default();
         State { map, current_dir }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
