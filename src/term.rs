@@ -19,7 +19,7 @@ impl AnsiTerm {
         // SimpleTerminal handles many common ansi escape sequence
         st.set_ansi(true);
 
-        // std::env::set_var("TERM", "vt100");
+        std::env::set_var("TERM", "vt100");
         let mut cmd = if cfg!(target_os = "windows") {
             Command::new("powershell.exe")
         } else {
