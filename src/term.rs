@@ -1,7 +1,12 @@
+#![allow(clippy::upper_case_acronyms)]
+
 use fltk::{enums::*, prelude::*, *};
 use std::fs::File;
 use std::io::{Read, Write};
+#[cfg(not(target_os = "windows"))]
 use std::os::fd::FromRawFd;
+#[cfg(target_os = "windows")]
+use std::os::windows::io::FromRawHandle;
 use std::process::{Command, Stdio};
 
 pub struct AnsiTerm {
@@ -14,9 +19,9 @@ impl AnsiTerm {
         // SimpleTerminal handles many common ansi escape sequence
         st.set_ansi(true);
 
-        std::env::set_var("TERM", "vt100");
+        // std::env::set_var("TERM", "vt100");
         let mut cmd = if cfg!(target_os = "windows") {
-            Command::new("cmd.exe")
+            Command::new("powershell.exe")
         } else {
             let mut cmd = Command::new("/bin/bash");
             cmd.arg("-i");
@@ -24,17 +29,15 @@ impl AnsiTerm {
         };
 
         let pipe = unsafe { create_pipe() };
-        let stdio = create_stdio(pipe.1);
-        let stderr = create_stdio(pipe.1);
         let mut child = cmd
-            .stdout(stdio)
-            .stderr(stderr)
+            .stdout(pipe.1)
+            .stderr(pipe.2)
             .stdin(Stdio::piped())
             .spawn()
             .unwrap();
 
         let mut writer = child.stdin.take().unwrap();
-        let mut reader = unsafe { File::from_raw_fd(pipe.0) };
+        let mut reader = pipe.0;
 
         std::thread::spawn({
             let mut st = st.clone();
@@ -67,43 +70,46 @@ impl AnsiTerm {
 
 fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
 
-unsafe fn create_pipe() -> (i32, i32) {
+#[cfg(not(target_os = "windows"))]
+unsafe fn create_pipe() -> (File, File, File) {
     use std::os::raw::*;
-    #[cfg(not(target_os = "windows"))]
-    {
-        let mut fds: [c_int; 2] = [0; 2];
-        extern "C" {
-            fn pipe(arg: *mut i32) -> i32;
-        }
-        let res = pipe(fds.as_mut_ptr());
-        if res != 0 {
-            panic!("Failed to create pipe!");
-        }
-        (fds[0], fds[1])
+    let mut fds: [c_int; 2] = [0; 2];
+    extern "C" {
+        fn pipe(arg: *mut i32) -> i32;
     }
-
-    #[cfg(target_os = "windows")]
-    {
-        extern "system" {
-            fn CreatePipe(rp: *mut isize, wp: *mut isize, attrs: *mut (), sz: c_ulong) -> c_int;
-        }
-        let mut rp = -1isize;
-        let mut wp = -1isize;
-        let res = CreatePipe(&mut rp as _, &mut wp as _, std::ptr::null_mut(), 0);
-        if res == 0 {
-            panic!("Failed to create pipe!");
-        }
-        (rp as i32, wp as i32)
+    let res = pipe(fds.as_mut_ptr());
+    if res != 0 {
+        panic!("Failed to create pipe!");
     }
+    (
+        File::from_raw_fd(fds[0]),
+        File::from_raw_fd(fds[1]),
+        File::from_raw_fd(fds[1]),
+    )
 }
 
-fn create_stdio(fd: i32) -> Stdio {
-    #[cfg(unix)]
-    unsafe {
-        Stdio::from_raw_fd(fd)
+#[cfg(target_os = "windows")]
+unsafe fn create_pipe() -> (File, File, File) {
+    use std::os::raw::*;
+    type HANDLE = *mut c_void;
+    type PHANDLE = *mut HANDLE;
+    extern "system" {
+        fn CreatePipe(rp: PHANDLE, wp: PHANDLE, attrs: *mut (), sz: c_ulong) -> c_int;
     }
-    #[cfg(windows)]
-    unsafe {
-        Stdio::from_raw_handle(fd)
+    let mut rp = std::ptr::null_mut();
+    let mut wp = std::ptr::null_mut();
+    let res = CreatePipe(
+        &mut rp as PHANDLE,
+        &mut wp as PHANDLE,
+        std::ptr::null_mut(),
+        0,
+    );
+    if res == 0 {
+        panic!("Failed to create pipe!");
     }
+    (
+        File::from_raw_handle(rp),
+        File::from_raw_handle(wp),
+        File::from_raw_handle(wp),
+    )
 }

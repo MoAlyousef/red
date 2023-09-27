@@ -287,7 +287,7 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                     }
                 }
                 if is_image {
-                    let img = image::SharedImage::load(path.clone()).unwrap();
+                    let img = image::SharedImage::load(path).unwrap();
                     let mut win: window::Window = app::widget_from_id("image_dialog").unwrap();
                     win.resize(win.x(), win.y(), img.w(), img.h());
                     win.child(0).unwrap().set_image(Some(img));
