@@ -30,12 +30,10 @@ impl AnsiTerm {
             })
             .expect("Failed to create pty");
 
+        std::env::set_var("TERM", "VT100");
         let mut cmd = if cfg!(target_os = "windows") {
             CommandBuilder::new("cmd.exe")
-        } else if cfg!(target_os = "macos") {
-            CommandBuilder::new("/bin/zsh")
         } else {
-            std::env::set_var("TERM", "VT100");
             let mut cmd = CommandBuilder::new("/bin/bash");
             cmd.args(["-i"]);
             cmd
