@@ -1,5 +1,6 @@
 use fltk::{enums::*, prelude::*, *};
-// use fltk_theme::{color_themes, ColorTheme};
+use fltk_theme::{color_themes, ColorTheme};
+use fltk_theme::{WidgetScheme, SchemeType};
 use std::{env, path::PathBuf};
 
 mod dialogs;
@@ -22,12 +23,11 @@ fn main() {
         env::current_dir().unwrap()
     };
 
-    let a = app::App::default().with_scheme(app::Scheme::Gleam);
-    // let theme = ColorTheme::new(color_themes::BLACK_THEME);
-    // theme.apply();
-    app::set_background_color(55, 55, 55);
-    app::set_background2_color(0, 0, 0);
-    app::set_foreground_color(255, 255, 255);
+    let a = app::App::default();
+    let theme = ColorTheme::new(color_themes::TAN_THEME);
+    theme.apply();
+    let widget_scheme = WidgetScheme::new(SchemeType::Clean);
+    widget_scheme.apply();
     app::set_color(Color::Selection, 255, 125, 125);
 
     let mut buf = text::TextBuffer::default();
@@ -94,11 +94,11 @@ fn main() {
     tabs.auto_layout();
     #[cfg(feature = "portable-pty")]
     {
-        let mut tab_splitter = frame::Frame::default();
-        tab_splitter.handle(utils::tab_splitter_cb);
-        col.fixed(&tab_splitter, 4);
-        let term = term::AnsiTerm::new(0, 0, 0, 0, None, current_path.clone());
-        col.fixed(&*term, 160);
+    let mut tab_splitter = frame::Frame::default();
+    tab_splitter.handle(utils::tab_splitter_cb);
+    col.fixed(&tab_splitter, 4);
+    let term = term::AnsiTerm::new(0, 0, 0, 0, None, current_path.clone());
+    col.fixed(&*term, 160);
     }
     col.end();
     row.end();
