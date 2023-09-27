@@ -1,43 +1,50 @@
 use fltk::{enums::*, prelude::*, *};
-use std::fs::File;
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use std::os::fd::FromRawFd;
+use std::sync::{Arc, Mutex};
 
 pub struct AnsiTerm {
     st: text::SimpleTerminal,
+    pub writer1: Arc<Mutex<Box<dyn std::io::Write + Send>>>,
 }
 
 impl AnsiTerm {
-    pub fn new(
+    pub fn new<L: Into<Option<&'static str>>>(
+        x: i32,
+        y: i32,
+        w: i32,
+        h: i32,
+        label: L,
         current_path: PathBuf,
     ) -> Self {
-        let mut st = text::SimpleTerminal::default().with_id("term");
+        let mut st = text::SimpleTerminal::new(x, y, w, h, label).with_id("term");
         // SimpleTerminal handles many common ansi escape sequence
         st.set_ansi(true);
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                cols: 120,
+                rows: 30,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .expect("Failed to create pty");
 
         std::env::set_var("TERM", "VT100");
         let mut cmd = if cfg!(target_os = "windows") {
-            Command::new("cmd.exe")
+            CommandBuilder::new("cmd.exe")
         } else {
-            let mut cmd = Command::new("/bin/bash");
-            cmd.args(&["-i"]);
+            let mut cmd = CommandBuilder::new("/bin/bash");
+            cmd.args(["-i"]);
             cmd
         };
-        cmd.current_dir(current_path);
+        cmd.cwd(current_path);
 
-        let pipe = unsafe { create_pipe() };
-        let stdio = create_stdio(pipe.1);
-        let stderr = create_stdio(pipe.1);
-        let mut child = cmd
-            .stdout(stdio)
-            .stderr(stderr)
-            .stdin(Stdio::piped())
-            .spawn()
-            .unwrap();
-        let mut writer = child.stdin.take().unwrap();
-        let mut reader = unsafe { File::from_raw_fd(pipe.0) };
+        let mut child = pair.slave.spawn_command(cmd).unwrap();
+        let writer = Arc::new(Mutex::new(pair.master.take_writer().unwrap()));
+        let writer1 = writer.clone();
+        let mut reader = pair.master.try_clone_reader().unwrap();
+
         std::thread::spawn({
             let mut st = st.clone();
             move || {
@@ -56,14 +63,14 @@ impl AnsiTerm {
 
         st.handle(move |_t, ev| match ev {
             Event::KeyDown => {
-                // let mut writer = writer.lock().unwrap();
+                let mut writer = writer.lock().unwrap();
                 writer.write_all(app::event_text().as_bytes()).unwrap();
                 true
             }
             _ => false,
         });
 
-        Self { st }
+        Self { st, writer1 }
     }
 }
 
@@ -89,46 +96,5 @@ fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
     // } else
     if msg != b"\x07" {
         st.append2(msg);
-    }
-}
-
-
-
-unsafe fn create_pipe() -> (i32, i32) {
-    use std::os::raw::*;
-    if cfg!(unix) {
-        let mut fds: [c_int; 2] = [0; 2];
-        extern "C" {
-            fn pipe(arg: *mut i32) -> i32;
-        }
-        let res = pipe(fds.as_mut_ptr());
-        if res != 0 {
-            panic!("Failed to create pipe!");
-        }
-        (fds[0], fds[1])
-    } else if cfg!(windows) {
-        extern "system" {
-            fn CreatePipe(rp: *mut isize, wp: *mut isize, attrs: *mut (), sz: c_ulong) -> c_int;
-        }
-        let mut rp = -1isize;
-        let mut wp = -1isize;
-        let res = CreatePipe(&mut rp as _, &mut wp as _, std::ptr::null_mut(), 0);
-        if res == 0 {
-            panic!("Failed to create pipe!");
-        }
-        (rp as i32, wp as i32)
-    } else {
-        panic!("Unknown platform!");
-    }
-}
-
-fn create_stdio(fd: i32) -> Stdio {
-    #[cfg(unix)]
-    unsafe {
-        Stdio::from_raw_fd(fd)
-    }
-    #[cfg(windows)]
-    unsafe {
-        Stdio::from_raw_handle(fd)
     }
 }
