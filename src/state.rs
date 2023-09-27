@@ -113,11 +113,10 @@ impl State {
         if tabs.children() == 0 {
             return None;
         }
-        if let Some(ed) = tabs.value().unwrap().child(0) {
-            Some(ed.as_widget_ptr() as usize)
-        } else {
-            None
-        }
+        tabs.value()
+            .unwrap()
+            .child(0)
+            .map(|ed| ed.as_widget_ptr() as usize)
     }
     pub fn was_modified(&mut self, flag: bool) {
         let mut tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
@@ -131,15 +130,9 @@ impl State {
             mybuf.modified = flag;
             if let Some(f) = mybuf.current_file.as_ref() {
                 if flag {
-                    edrow.set_label(&format!(
-                        "{} *",
-                        f.file_name().unwrap().to_str().unwrap()
-                    ));
+                    edrow.set_label(&format!("{} *", f.file_name().unwrap().to_str().unwrap()));
                 } else {
-                    edrow.set_label(&format!(
-                        "{}",
-                        f.file_name().unwrap().to_str().unwrap()
-                    ));
+                    edrow.set_label(f.file_name().unwrap().to_str().unwrap());
                 }
                 tabs.redraw();
             }
@@ -180,11 +173,10 @@ impl State {
         if tabs.children() == 0 {
             return None;
         }
-        if let Some(c) = tabs.value().unwrap().child(0) {
-            unsafe { Some(c.into_widget()) }
-        } else {
-            None
-        }
+        tabs.value()
+            .unwrap()
+            .child(0)
+            .map(|c| unsafe { c.into_widget() })
     }
 }
 

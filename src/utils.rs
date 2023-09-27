@@ -89,16 +89,13 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
         menu_cb,
     );
     m.at(idx).unwrap().set();
-    #[cfg(feature = "portable-pty")]
-    {
-        let idx = m.add(
-            "&View/Terminal\t",
-            Shortcut::Ctrl | 'h',
-            menu::MenuFlag::Toggle,
-            menu_cb,
-        );
-        m.at(idx).unwrap().set();
-    }
+    let idx = m.add(
+        "&View/Terminal\t",
+        Shortcut::Ctrl | 'h',
+        menu::MenuFlag::Toggle,
+        menu_cb,
+    );
+    m.at(idx).unwrap().set();
     m.add(
         "&Help/About\t",
         Shortcut::None,
@@ -204,19 +201,29 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&File/Quit\t" => close_app(),
             "&Edit/Undo\t" => STATE.with(|s| {
-                s.current_editor().map(|e| e.undo());
+                if let Some(e) = s.current_editor() {
+                    e.undo()
+                }
             }),
             "&Edit/Redo\t" => STATE.with(|s| {
-                s.current_editor().map(|e| e.redo());
+                if let Some(e) = s.current_editor() {
+                    e.redo()
+                }
             }),
             "&Edit/Cut\t" => STATE.with(|s| {
-                s.current_editor().map(|e| e.cut());
+                if let Some(e) = s.current_editor() {
+                    e.cut()
+                }
             }),
             "&Edit/Copy\t" => STATE.with(|s| {
-                s.current_editor().map(|e| e.copy());
+                if let Some(e) = s.current_editor() {
+                    e.copy()
+                }
             }),
             "&Edit/Paste\t" => STATE.with(|s| {
-                s.current_editor().map(|e| e.paste());
+                if let Some(e) = s.current_editor() {
+                    e.paste()
+                }
             }),
             "&Edit/Find\t" => find(),
             "&Edit/Replace\t" => replace(),

@@ -1,11 +1,10 @@
 use fltk::{enums::*, prelude::*, *};
 use fltk_theme::{color_themes, ColorTheme};
-use fltk_theme::{WidgetScheme, SchemeType};
+use fltk_theme::{SchemeType, WidgetScheme};
 use std::{env, path::PathBuf};
 
 mod dialogs;
 mod state;
-#[cfg(feature = "portable-pty")]
 mod term;
 mod utils;
 
@@ -92,14 +91,11 @@ fn main() {
     edrow.end();
     tabs.end();
     tabs.auto_layout();
-    #[cfg(feature = "portable-pty")]
-    {
     let mut tab_splitter = frame::Frame::default();
     tab_splitter.handle(utils::tab_splitter_cb);
     col.fixed(&tab_splitter, 4);
     let term = term::AnsiTerm::new(0, 0, 0, 0, None, current_path.clone());
     col.fixed(&*term, 160);
-    }
     col.end();
     row.end();
     let info = frame::Frame::default()

@@ -33,6 +33,7 @@ impl AnsiTerm {
         let mut cmd = if cfg!(target_os = "windows") {
             CommandBuilder::new("cmd.exe")
         } else {
+            std::env::set_var("TERM", "VT100");
             let mut cmd = CommandBuilder::new("/bin/bash");
             cmd.args(["-i"]);
             cmd
@@ -68,7 +69,7 @@ impl AnsiTerm {
             }
             _ => false,
         });
-        
+
         Self { st, writer1 }
     }
 }
@@ -77,22 +78,23 @@ fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
 
 fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
     // handles the sticky title-bell sequence
-    if let Some(pos0) = msg.windows(4).position(|m| m == b"\x1b]0;") {
-        let mut pos1 = pos0 + 1;
-        while pos1 < msg.len() - 1 && msg[pos1] != b'\x1b' {
-            pos1 += 1;
-        }
-        let pre = &msg[0..pos0];
-        let post = &msg[pos1..];
-        if !pre.is_empty() {
-            if let Ok(s) = String::from_utf8(pre.to_vec()) {
-                st.append(&s);
-            }
-        }
-        if !post.is_empty() {
-            st.append2(post);
-        }
-    } else if msg != b"\x07" {
+    // if let Some(pos0) = msg.windows(4).position(|m| m == b"\x1b]0;") {
+    //     let mut pos1 = pos0 + 1;
+    //     while pos1 < msg.len() - 1 && msg[pos1] != b'\x1b' {
+    //         pos1 += 1;
+    //     }
+    //     let pre = &msg[0..pos0];
+    //     let post = &msg[pos1..];
+    //     if !pre.is_empty() {
+    //         if let Ok(s) = String::from_utf8(pre.to_vec()) {
+    //             st.append(&s);
+    //         }
+    //     }
+    //     if !post.is_empty() {
+    //         st.append2(post);
+    //     }
+    // } else 
+    if msg != b"\x07" {
         st.append2(msg);
     }
 }
