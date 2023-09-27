@@ -32,6 +32,8 @@ impl AnsiTerm {
 
         let mut cmd = if cfg!(target_os = "windows") {
             CommandBuilder::new("cmd.exe")
+        } else if cfg!(target_os = "macos") {
+            CommandBuilder::new("/bin/zsh")
         } else {
             std::env::set_var("TERM", "VT100");
             let mut cmd = CommandBuilder::new("/bin/bash");
@@ -93,7 +95,7 @@ fn format(msg: &[u8], st: &mut text::SimpleTerminal) {
     //     if !post.is_empty() {
     //         st.append2(post);
     //     }
-    // } else 
+    // } else
     if msg != b"\x07" {
         st.append2(msg);
     }
