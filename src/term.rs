@@ -30,14 +30,14 @@ impl AnsiTerm {
 
         let pipe = unsafe { create_pipe() };
         let mut child = cmd
-            .stdout(pipe.1)
-            .stderr(pipe.2)
+            .stdout(file_from_raw(pipe.1))
+            .stderr(file_from_raw(pipe.1))
             .stdin(Stdio::piped())
             .spawn()
             .unwrap();
 
         let mut writer = child.stdin.take().unwrap();
-        let mut reader = pipe.0;
+        let mut reader = file_from_raw(pipe.0);
 
         std::thread::spawn({
             let mut st = st.clone();
@@ -58,7 +58,11 @@ impl AnsiTerm {
 
         st.handle(move |_t, ev| match ev {
             Event::KeyDown => {
-                writer.write_all(app::event_text().as_bytes()).unwrap();
+                let bytes = app::event_text().into_bytes();
+                // if bytes == b"\x03" {
+                // writer.write_all(&bytes).unwrap();
+                // }
+                writer.write_all(&bytes).unwrap();
                 true
             }
             _ => false,
@@ -71,7 +75,7 @@ impl AnsiTerm {
 fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
 
 #[cfg(not(target_os = "windows"))]
-unsafe fn create_pipe() -> (File, File, File) {
+unsafe fn create_pipe() -> (i32, i32) {
     use std::os::raw::*;
     let mut fds: [c_int; 2] = [0; 2];
     extern "C" {
@@ -81,15 +85,11 @@ unsafe fn create_pipe() -> (File, File, File) {
     if res != 0 {
         panic!("Failed to create pipe!");
     }
-    (
-        File::from_raw_fd(fds[0]),
-        File::from_raw_fd(fds[1]),
-        File::from_raw_fd(fds[1]),
-    )
+    (fds[0], fds[1])
 }
 
 #[cfg(target_os = "windows")]
-unsafe fn create_pipe() -> (File, File, File) {
+unsafe fn create_pipe() -> (i32, i32) {
     use std::os::raw::*;
     type HANDLE = *mut c_void;
     type PHANDLE = *mut HANDLE;
@@ -107,9 +107,17 @@ unsafe fn create_pipe() -> (File, File, File) {
     if res == 0 {
         panic!("Failed to create pipe!");
     }
-    (
-        File::from_raw_handle(rp),
-        File::from_raw_handle(wp),
-        File::from_raw_handle(wp),
-    )
+    (rp as isize as i32, wp as isize as i32)
+}
+
+fn file_from_raw(handle: i32) -> File {
+    #[cfg(not(target_os = "windows"))]
+    unsafe {
+        File::from_raw_fd(handle)
+    }
+
+    #[cfg(target_os = "windows")]
+    unsafe {
+        File::from_raw_handle(handle as isize as *mut _)
+    }
 }
