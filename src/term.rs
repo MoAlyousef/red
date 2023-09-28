@@ -61,6 +61,24 @@ impl AnsiTerm {
             _ => false,
         });
 
+        st.set_cursor_style(text::Cursor::Dim);
+        // for a blinking cursors
+        app::add_timeout3(1.0, {
+            let mut st = st.clone();
+            move |h| {
+                if !st.has_focus() {
+                    if st.cursor_style() == text::Cursor::Block {
+                        st.set_cursor_style(text::Cursor::Dim);
+                    } else {
+                        st.set_cursor_style(text::Cursor::Block);
+                    }
+                } else {
+                    st.set_cursor_style(text::Cursor::Block);
+                }
+                app::repeat_timeout3(1.0, h);
+            }
+        });
+
         Self { st }
     }
 }
