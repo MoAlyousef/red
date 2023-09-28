@@ -317,28 +317,44 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
     }
 }
 
-pub fn tab_splitter_cb(f: &mut frame::Frame, ev: enums::Event) -> bool {
+pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
     let term: text::SimpleTerminal = app::widget_from_id("term").unwrap();
     match ev {
-        enums::Event::Push => true,
-        enums::Event::Drag => {
+        Event::Push => true,
+        Event::Drag => {
             parent.fixed(&term, parent.h() + parent.y() - app::event_y());
             app::redraw();
+            true
+        }
+        Event::Enter => {
+            f.window().unwrap().set_cursor(Cursor::NS);
+            true
+        }
+        Event::Leave => {
+            f.window().unwrap().set_cursor(Cursor::Arrow);
             true
         }
         _ => false,
     }
 }
 
-pub fn fbr_splitter_cb(f: &mut frame::Frame, ev: enums::Event) -> bool {
+pub fn fbr_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
     let fbr: browser::FileBrowser = app::widget_from_id("fbr").unwrap();
     match ev {
-        enums::Event::Push => true,
-        enums::Event::Drag => {
+        Event::Push => true,
+        Event::Drag => {
             parent.fixed(&fbr, app::event_x());
             app::redraw();
+            true
+        }
+        Event::Enter => {
+            f.window().unwrap().set_cursor(Cursor::WE);
+            true
+        }
+        Event::Leave => {
+            f.window().unwrap().set_cursor(Cursor::Arrow);
             true
         }
         _ => false,
