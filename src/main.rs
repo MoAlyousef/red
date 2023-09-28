@@ -82,6 +82,7 @@ fn main() {
     let mut col = group::Flex::default().column();
     col.set_pad(0);
     let mut tabs = group::Tabs::default().with_id("tabs");
+    tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
     let mut tab_splitter = frame::Frame::default();

@@ -109,7 +109,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
 pub fn init_editor(ed: &mut text::TextEditor) {
     ed.set_linenumber_width(40);
     ed.set_linenumber_size(12);
-    ed.set_linenumber_fgcolor(Color::Yellow);
+    ed.set_linenumber_fgcolor(Color::Yellow.darker());
     ed.set_linenumber_bgcolor(Color::Background);
     ed.set_text_font(Font::Courier);
     ed.set_trigger(CallbackTrigger::Changed);

@@ -118,9 +118,9 @@ impl State {
             mybuf.modified = flag;
             if let Some(f) = mybuf.current_file.as_ref() {
                 if flag {
-                    edrow.set_label(&format!("{} *", f.file_name().unwrap().to_str().unwrap()));
+                    edrow.set_label(&format!("\t{} *", f.file_name().unwrap().to_str().unwrap()));
                 } else {
-                    edrow.set_label(f.file_name().unwrap().to_str().unwrap());
+                    edrow.set_label(&format!("\t{}", f.file_name().unwrap().to_str().unwrap()));
                 }
                 tabs.redraw();
             }
