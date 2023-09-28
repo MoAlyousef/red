@@ -3,6 +3,8 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
     env,
     io::{Read, Write},
+    str, thread,
+    time::Duration,
 };
 
 pub struct AnsiTerm {
@@ -23,10 +25,10 @@ impl AnsiTerm {
             })
             .expect("Failed to create pty");
 
-        std::env::set_var("TERM", "vt100");
         let mut cmd = if cfg!(target_os = "windows") {
             CommandBuilder::new("cmd.exe")
         } else {
+            env::set_var("TERM", "vt100");
             CommandBuilder::new("/bin/bash")
         };
         cmd.cwd(env::current_dir().unwrap());
@@ -35,20 +37,31 @@ impl AnsiTerm {
         let mut writer = pair.master.take_writer().unwrap();
         let mut reader = pair.master.try_clone_reader().unwrap();
 
-        std::thread::spawn({
+        thread::spawn({
             let mut st = st.clone();
             move || {
+                let mut s = Vec::new();
                 while child.try_wait().is_ok() {
                     let mut msg = [0u8; 1024];
                     if let Ok(sz) = reader.read(&mut msg) {
                         let msg = &msg[0..sz];
-                        // we want to handle some escape sequences that the default SimpleTerminal doesn't
-                        if msg != b"\x07" {
-                            st.append2(msg);
+                        s.extend_from_slice(&msg[0..sz]);
+                        match str::from_utf8(&s) {
+                            Ok(text) => {
+                                if text != "\x07" {
+                                    st.append(text);
+                                }
+                                s.clear();
+                            }
+                            Err(z) => {
+                                let z = z.valid_up_to();
+                                st.append2(&msg[0..z]);
+                                s.extend_from_slice(&msg[z..]);
+                            }
                         }
                         app::awake();
                     }
-                    std::thread::sleep(std::time::Duration::from_millis(30));
+                    thread::sleep(Duration::from_millis(30));
                 }
             }
         });

@@ -1,24 +1,27 @@
-use fltk::{enums::*, *};
+use fltk::{
+    enums::*,
+    text::{StyleTableEntry, TextBuffer},
+};
 use json_tools::{Buffer, BufferType, Lexer, Span, TokenType};
 
-pub fn styles() -> Vec<text::StyleTableEntry> {
+pub fn styles() -> Vec<StyleTableEntry> {
     vec![
-        text::StyleTableEntry {
+        StyleTableEntry {
             color: Color::Red,
             font: Font::Courier,
             size: 14,
         },
-        text::StyleTableEntry {
+        StyleTableEntry {
             color: Color::from_hex(0x5dafef),
             font: Font::Courier,
             size: 14,
         },
-        text::StyleTableEntry {
+        StyleTableEntry {
             color: Color::Black,
             font: Font::Courier,
             size: 14,
         },
-        text::StyleTableEntry {
+        StyleTableEntry {
             color: Color::Green.darker(),
             font: Font::Courier,
             size: 14,
@@ -26,7 +29,7 @@ pub fn styles() -> Vec<text::StyleTableEntry> {
     ]
 }
 
-pub fn apply(s: &str, sbuf: &mut text::TextBuffer) {
+pub fn apply(s: &str, sbuf: &mut TextBuffer) {
     let mut local_buf = vec![b'A'; s.len()];
     for token in Lexer::new(s.bytes(), BufferType::Span) {
         use TokenType::*;

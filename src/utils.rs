@@ -1,6 +1,6 @@
 use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
-use std::{env, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     m.add(
@@ -169,7 +169,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                         let modified = e.modified;
                         if let Some(current_file) = e.current_file.as_ref() {
                             if modified && current_file.exists() {
-                                std::fs::write(current_file, e.buf.text()).ok();
+                                fs::write(current_file, e.buf.text()).ok();
                                 s.was_modified(false);
                             }
                         }
@@ -181,7 +181,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 if c.exists() {
                     STATE.with(move |s| {
                         if let Some(buf) = s.buf().as_ref() {
-                            std::fs::write(&c, buf.text()).expect("Failed to write to file!");
+                            fs::write(&c, buf.text()).expect("Failed to write to file!");
                             s.was_modified(false);
                         }
                     });
@@ -191,7 +191,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 STATE.with(|s| {
                     for v in s.map.values_mut() {
                         if v.modified && v.current_file.as_ref().unwrap().exists() {
-                            std::fs::write(v.current_file.as_ref().unwrap(), v.buf.text()).ok();
+                            fs::write(v.current_file.as_ref().unwrap(), v.buf.text()).ok();
                             v.modified = true;
                         }
                     }
