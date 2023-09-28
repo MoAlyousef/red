@@ -1,6 +1,9 @@
 use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     m.add(
@@ -271,7 +274,7 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
                 let mut info: frame::Frame = app::widget_from_id("info").unwrap();
                 info.set_label(&format!(
                     "Directory: {}",
-                    env::current_dir().unwrap().display()
+                    strip_unc_path(&env::current_dir().unwrap())
                 ));
                 f.set_damage(true);
             } else {
@@ -354,5 +357,14 @@ pub fn fbr_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
             true
         }
         _ => false,
+    }
+}
+
+pub fn strip_unc_path(p: &Path) -> String {
+    let p = p.to_str().unwrap();
+    if let Some(end) = p.strip_prefix("\\\\?\\") {
+        end.to_string()
+    } else {
+        p.to_string()
     }
 }

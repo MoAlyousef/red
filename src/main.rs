@@ -93,7 +93,10 @@ fn main() {
     col.end();
     row.end();
     let info = frame::Frame::default()
-        .with_label(&format!("Directory: {}", current_path.display()))
+        .with_label(&format!(
+            "Directory: {}",
+            utils::strip_unc_path(&current_path)
+        ))
         .with_align(enums::Align::Left | enums::Align::Inside)
         .with_id("info");
     col0.fixed(&info, 20);

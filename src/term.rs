@@ -3,8 +3,7 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
     env,
     io::{Read, Write},
-    str, thread,
-    time::Duration,
+    mem, str, thread,
 };
 
 pub struct AnsiTerm {
@@ -18,8 +17,8 @@ impl AnsiTerm {
         st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 120,
-                rows: 30,
+                cols: 80,
+                rows: 24,
                 pixel_width: 0,
                 pixel_height: 0,
             })
@@ -32,39 +31,64 @@ impl AnsiTerm {
             CommandBuilder::new("/bin/bash")
         };
         cmd.cwd(env::current_dir().unwrap());
+        cmd.env("PATH", env::var("PATH").unwrap());
 
         let mut child = pair.slave.spawn_command(cmd).unwrap();
-        let mut writer = pair.master.take_writer().unwrap();
         let mut reader = pair.master.try_clone_reader().unwrap();
+        let mut writer = pair.master.take_writer().unwrap();
+        mem::forget(pair);
 
-        thread::spawn({
-            let mut st = st.clone();
-            move || {
-                let mut s = Vec::new();
-                while child.try_wait().is_ok() {
-                    let mut msg = [0u8; 1024];
-                    if let Ok(sz) = reader.read(&mut msg) {
-                        let msg = &msg[0..sz];
-                        s.extend_from_slice(&msg[0..sz]);
-                        match str::from_utf8(&s) {
-                            Ok(text) => {
-                                if text != "\x07" {
-                                    st.append(text);
+        #[cfg(not(windows))]
+        {
+            thread::spawn({
+                let mut st = st.clone();
+                move || {
+                    let mut s = Vec::new();
+                    while child.try_wait().is_ok() {
+                        let mut msg = [0u8; 1024];
+                        if let Ok(sz) = reader.read(&mut msg) {
+                            let msg = &msg[0..sz];
+                            s.extend_from_slice(&msg[0..sz]);
+                            match str::from_utf8(&s) {
+                                Ok(text) => {
+                                    if text != "\x07" {
+                                        st.append(text);
+                                    }
+                                    s.clear();
                                 }
-                                s.clear();
+                                Err(z) => {
+                                    let z = z.valid_up_to();
+                                    st.append2(&msg[0..z]);
+                                    s.extend_from_slice(&msg[z..]);
+                                }
                             }
-                            Err(z) => {
-                                let z = z.valid_up_to();
-                                st.append2(&msg[0..z]);
-                                s.extend_from_slice(&msg[z..]);
-                            }
+                            app::awake();
                         }
-                        app::awake();
+                        app::sleep(0.03);
                     }
-                    thread::sleep(Duration::from_millis(30));
                 }
-            }
-        });
+            });
+        }
+
+        #[cfg(windows)]
+        {
+            // windows quirk
+            app::sleep(0.03);
+            thread::spawn({
+                let mut st = st.clone();
+                move || {
+                    // let mut s = Vec::new();
+                    while child.try_wait().is_ok() {
+                        let mut msg = [0u8; 1024];
+                        if let Ok(sz) = reader.read(&mut msg) {
+                            let msg = &msg[0..sz];
+                            st.append2(msg);
+                        }
+                        app::sleep(0.03);
+                    }
+                }
+            });
+        }
 
         st.handle(move |_t, ev| match ev {
             Event::KeyDown => {
