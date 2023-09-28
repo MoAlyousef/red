@@ -66,4 +66,3 @@ impl AnsiTerm {
 }
 
 fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
-

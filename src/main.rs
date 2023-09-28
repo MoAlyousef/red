@@ -1,9 +1,10 @@
 use fltk::{enums::*, prelude::*, *};
-use fltk_theme::{color_themes, ColorTheme};
+// use fltk_theme::{color_themes, ColorTheme};
 use fltk_theme::{SchemeType, WidgetScheme};
 use std::{env, path::PathBuf};
 
 mod dialogs;
+mod highlight;
 mod state;
 mod term;
 mod utils;
@@ -34,11 +35,15 @@ fn main() {
     let current_path = env::current_dir().unwrap().canonicalize().unwrap();
 
     let a = app::App::default();
-    let theme = ColorTheme::new(color_themes::DARK_THEME);
-    theme.apply();
-    let widget_scheme = WidgetScheme::new(SchemeType::Clean);
+    // let theme = ColorTheme::new(color_themes::TAN_THEME);
+    // theme.apply();
+    let widget_scheme = WidgetScheme::new(SchemeType::Gleam);
     widget_scheme.apply();
-    app::set_color(Color::Selection, 255, 125, 125);
+    app::set_menu_linespacing(10);
+    app::set_background_color(0x21, 0x25, 0x2b);
+    app::set_background2_color(0x28, 0x2c, 0x34);
+    app::set_foreground_color(0xab, 0xb2, 0xa2);
+    app::set_color(Color::Selection, 0x32, 0x38, 0x42);
 
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
@@ -54,6 +59,7 @@ fn main() {
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
     let mut m = menu::SysMenuBar::default().with_id("menu");
+    m.set_color(Color::Background2);
     utils::init_menu(&mut m, current_file.is_none());
     col0.fixed(&m, MENU_HEIGHT);
     let mut row = group::Flex::default();
@@ -63,6 +69,7 @@ fn main() {
         .with_id("fbr");
     fbr.load(current_path.clone())
         .expect("Failed to load working directory");
+    fbr.set_color(Color::Background.darker());
     if current_file.is_none() {
         row.fixed(&fbr, 180);
     } else {

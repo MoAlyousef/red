@@ -7,6 +7,7 @@ edition = "2021"
 fltk = "1.4.13"
 fltk-theme = "0.7"
 portable-pty = "0.8"
+json-tools = "1.1"
 
 [profile.release]
 strip = true

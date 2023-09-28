@@ -39,7 +39,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
         menu::MenuFlag::Normal,
         menu_cb,
     );
-    m.at(idx).unwrap().set_label_color(Color::Selection);
+    m.at(idx).unwrap().set_label_color(Color::Red);
     m.add(
         "&Edit/Undo\t",
         Shortcut::Ctrl | 'z',
@@ -122,10 +122,6 @@ fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
     nfc.filename()
 }
 
-fn close_app() {
-    app::quit();
-}
-
 fn find() {
     let mut dlg: window::Window = app::widget_from_id("find").unwrap();
     let main_win = app::first_window().unwrap();
@@ -142,7 +138,7 @@ fn replace() {
 
 pub fn win_cb(_: &mut window::Window) {
     if app::event() == Event::Close {
-        close_app();
+        app::quit();
     }
 }
 
@@ -201,7 +197,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                     }
                 });
             }
-            "&File/Quit\t" => close_app(),
+            "&File/Quit\t" => app::quit(),
             "&Edit/Undo\t" => STATE.with(|s| {
                 if let Some(e) = s.current_editor() {
                     e.undo()

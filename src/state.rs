@@ -51,9 +51,6 @@ impl State {
             COUNT.store(old_count + 1, Ordering::Relaxed);
             let mut buf = text::TextBuffer::default();
             buf.set_tab_distance(4);
-            if let Some(p) = current_path.as_ref() {
-                buf.load_file(p).ok();
-            }
             tabs.begin();
             let mut edrow = group::Flex::default()
                 .row()
@@ -76,6 +73,10 @@ impl State {
             tabs.end();
             tabs.auto_layout();
             tabs.set_value(&edrow).ok();
+            if let Some(p) = current_path.as_ref() {
+                buf.load_file(p).ok();
+                crate::highlight::highlight(p, &mut ed, &mut buf);
+            }
             let mybuf = MyBuffer {
                 modified: false,
                 id,
