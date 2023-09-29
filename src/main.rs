@@ -1,5 +1,4 @@
 use fltk::{enums::*, prelude::*, *};
-// use fltk_theme::{color_themes, ColorTheme};
 use fltk_theme::{SchemeType, WidgetScheme};
 use std::{env, path::PathBuf};
 
@@ -35,8 +34,6 @@ fn main() {
     let current_path = env::current_dir().unwrap().canonicalize().unwrap();
 
     let a = app::App::default();
-    // let theme = ColorTheme::new(color_themes::TAN_THEME);
-    // theme.apply();
     let widget_scheme = WidgetScheme::new(SchemeType::Gleam);
     widget_scheme.apply();
     app::set_menu_linespacing(10);

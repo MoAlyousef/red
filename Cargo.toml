@@ -7,7 +7,13 @@ edition = "2021"
 fltk = "1.4.13"
 fltk-theme = "0.7"
 portable-pty = "0.8"
-json-tools = "1.1"
+tree-sitter-highlight = { version = "0.20", optional = true }
+tree-sitter-rust = { version = "0.20", optional = true }
+tree-sitter-toml = { version = "0.20", optional = true }
+
+[features]
+default = ["highlight"]
+highlight = ["tree-sitter-highlight", "tree-sitter-rust", "tree-sitter-toml"]
 
 [profile.release]
 strip = true

@@ -4,7 +4,12 @@ use fltk::{
 };
 use std::path::Path;
 
-pub mod json;
+mod toml;
+mod rust;
+
+fn translate_style(idx: usize) -> char {
+    char::from_u32(65 + idx as u32).unwrap()
+}
 
 struct HighlightData {
     styles: Vec<StyleTableEntry>,
@@ -20,7 +25,8 @@ impl HighlightData {
 fn get_highlight(p: &Path) -> Option<HighlightData> {
     if let Some(ext) = p.extension() {
         match ext.to_str().unwrap() {
-            "json" => Some(HighlightData::new(json::styles(), json::apply)),
+            "rs" => Some(HighlightData::new(rust::styles(), rust::apply)),
+            "toml" => Some(HighlightData::new(toml::styles(), toml::apply)),
             _ => None,
         }
     } else {
@@ -40,4 +46,43 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
             }
         });
     }
+}
+
+#[macro_export]
+macro_rules! apply_ {
+    ($s:tt) => {
+        {
+            let mut highlighter = Highlighter::new();    
+
+            let lang = ts::language();
+    
+            let mut config = HighlightConfiguration::new(
+                lang,
+                ts::HIGHLIGHT_QUERY,
+                "",
+                "",
+            ).unwrap();
+            config.configure(HIGHLIGHT_NAMES);
+            let highlights = highlighter
+                .highlight(&config, $s.as_bytes(), None, |_| None)
+                .unwrap();
+    
+            let mut local_buf = "A".repeat($s.len());
+            let mut c = 'A';
+            for event in highlights {
+                match event.unwrap() {
+                    HighlightEvent::HighlightStart(s) => {
+                        c = super::translate_style(s.0);
+                    }
+                    HighlightEvent::Source { start, end } => {
+                        local_buf.replace_range(start..end, &c.to_string().repeat(end - start));
+                    }
+                    HighlightEvent::HighlightEnd => {
+                        ()
+                    }
+                }
+            }
+            local_buf
+        }
+    };
 }
