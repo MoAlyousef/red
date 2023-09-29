@@ -1,10 +1,10 @@
-use tree_sitter_highlight::HighlightConfiguration;
-use tree_sitter_highlight::HighlightEvent;
-use tree_sitter_highlight::Highlighter;
 use fltk::{
     enums::*,
     text::{StyleTableEntry, TextBuffer},
 };
+use tree_sitter_highlight::HighlightConfiguration;
+use tree_sitter_highlight::HighlightEvent;
+use tree_sitter_highlight::Highlighter;
 
 use tree_sitter_toml as ts;
 
@@ -19,32 +19,38 @@ const HIGHLIGHT_NAMES: &[&str] = &[
 
 pub fn styles() -> Vec<StyleTableEntry> {
     vec![
-        StyleTableEntry { // prop
+        StyleTableEntry {
+            // prop
             color: Color::Red,
             font: Font::Courier,
             size: 14,
         },
-        StyleTableEntry { // comment
+        StyleTableEntry {
+            // comment
             color: Color::Foreground.darker(),
             font: Font::Courier,
             size: 14,
         },
-        StyleTableEntry { // str
+        StyleTableEntry {
+            // str
             color: Color::Green.darker(),
             font: Font::Courier,
             size: 14,
         },
-        StyleTableEntry { // num
+        StyleTableEntry {
+            // num
             color: Color::Green.darker(),
             font: Font::Courier,
             size: 14,
         },
-        StyleTableEntry { // punct
+        StyleTableEntry {
+            // punct
             color: Color::White,
             font: Font::Courier,
             size: 14,
         },
-        StyleTableEntry { // =
+        StyleTableEntry {
+            // =
             color: Color::White,
             font: Font::Courier,
             size: 14,
