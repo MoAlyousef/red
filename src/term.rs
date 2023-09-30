@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
@@ -7,7 +8,6 @@ use std::{
     io::{Read, Write},
     mem, str, thread,
 };
-use crate::state::STATE;
 
 pub struct PPTerm {
     st: text::SimpleTerminal,
@@ -98,7 +98,13 @@ impl PPTerm {
             Event::KeyDown => {
                 let key = app::event_key();
                 if key == Key::Up || key == Key::Down {
-                    writer.write_all(STATE.with(|s| s.cmds.cmds.last().unwrap().clone()).as_bytes()).unwrap();
+                    writer
+                        .write_all(
+                            STATE
+                                .with(|s| s.cmds.cmds.last().unwrap().clone())
+                                .as_bytes(),
+                        )
+                        .unwrap();
                     t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
                 } else {
                     let txt = app::event_text();
@@ -114,7 +120,7 @@ impl PPTerm {
                     writer.write_all(txt.as_bytes()).unwrap();
                 }
                 true
-            },
+            }
             Event::KeyUp => {
                 if app::event_key() == Key::Up {
                     t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);

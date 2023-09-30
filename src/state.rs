@@ -46,7 +46,11 @@ pub struct State {
 impl State {
     pub fn new(current_dir: PathBuf) -> Self {
         let map = HashMap::default();
-        State { map, current_dir, cmds: Commands::default() }
+        State {
+            map,
+            current_dir,
+            cmds: Commands::default(),
+        }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
         let mut open = false;
