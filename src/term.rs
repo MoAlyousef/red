@@ -96,14 +96,10 @@ impl PPTerm {
             Event::KeyDown => {
                 let key = app::event_key();
                 if key == Key::Up {
-                    writer
-                        .write_all(b"\x10")
-                        .unwrap();
+                    writer.write_all(b"\x10").unwrap();
                     t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
                 } else if key == Key::Down {
-                    writer
-                        .write_all(b"\x0E")
-                        .unwrap();
+                    writer.write_all(b"\x0E").unwrap();
                 } else {
                     let txt = app::event_text();
                     writer.write_all(txt.as_bytes()).unwrap();
@@ -154,30 +150,29 @@ impl XTerm {
         let mut xterm_win = window::Window::default().with_id("term");
         xterm_win.end();
         xterm_win.set_color(Color::Black);
-        if crate::utils::is_session_x11() {}
-        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-        {
-            if crate::utils::is_session_x11() {
-                app::add_timeout3(0.1, {
-                    let xterm_win = xterm_win.clone();
-                    move |_h| {
-                        let handle = xterm_win.raw_handle();
-                        std::process::Command::new("xterm")
-                            .args(&[
-                                "-into",
-                                &format!("{}", handle),
-                                "-bg",
-                                "black",
-                                "-fg",
-                                "white",
-                            ])
-                            .spawn()
-                            .unwrap();
-                    }
-                });
-            }
+        if crate::utils::can_use_xterm() {
+            app::add_timeout3(0.1, {
+                let xterm_win = xterm_win.clone();
+                move |_h| {
+                    let handle = xterm_win.raw_handle() as u64;
+                    std::process::Command::new("xterm")
+                        .args([
+                            "-into",
+                            &format!("{}", handle),
+                            "-bg",
+                            "black",
+                            "-fg",
+                            "white",
+                            "-fa",
+                            "'Monospace'",
+                            "-fs",
+                            "10",
+                        ])
+                        .spawn()
+                        .unwrap();
+                }
+            });
         }
-
         Self { xterm_win }
     }
 }

@@ -375,28 +375,16 @@ pub fn strip_unc_path(p: &Path) -> String {
     }
 }
 
-pub fn is_session_x11() -> bool {
-    if let Ok(var) = env::var("XDG_SESSION_TYPE") {
-        var == "x11"
+pub fn can_use_xterm() -> bool {
+    if cfg!(not(any(target_os = "macos", target_os = "windows"))) {
+        if let Ok(var) = env::var("XDG_SESSION_TYPE") {
+            var == "x11"
+        } else if env::var("RED_XTERM").is_ok() {
+            true
+        } else {
+            false
+        }
     } else {
         false
     }
-}
-
-pub fn create_term() -> impl WidgetExt {
-    use crate::term;
-    let term;
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        term = if utils::is_session_x11() {
-            term::XTerm::new()
-        } else {
-            term::PPTerm::new()
-        };
-    }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
-    {
-        term = term::PPTerm::new();
-    }
-    term.clone()
 }
