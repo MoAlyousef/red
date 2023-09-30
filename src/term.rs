@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use crate::state::STATE;
 use fltk::{enums::*, prelude::*, *};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
@@ -93,30 +92,20 @@ impl PPTerm {
             });
         }
 
-        let mut cmd = String::new();
         st.handle(move |t, ev| match ev {
             Event::KeyDown => {
                 let key = app::event_key();
-                if key == Key::Up || key == Key::Down {
+                if key == Key::Up {
                     writer
-                        .write_all(
-                            STATE
-                                .with(|s| s.cmds.cmds.last().unwrap().clone())
-                                .as_bytes(),
-                        )
+                        .write_all(b"\x10")
                         .unwrap();
                     t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
+                } else if key == Key::Down {
+                    writer
+                        .write_all(b"\x0E")
+                        .unwrap();
                 } else {
                     let txt = app::event_text();
-                    if txt == "\r" {
-                        STATE.with({
-                            let cmd = cmd.clone();
-                            move |s| s.cmds.push(&cmd)
-                        });
-                        cmd.clear();
-                    } else {
-                        cmd.push_str(&txt);
-                    }
                     writer.write_all(txt.as_bytes()).unwrap();
                 }
                 true
