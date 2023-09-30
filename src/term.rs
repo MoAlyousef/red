@@ -133,15 +133,15 @@ impl Xterm {
         let mut xterm_win = window::Window::default().with_id("term");
         xterm_win.end();
         xterm_win.set_color(Color::Black);
-        app::add_timeout3(0.1, {
-            let xterm_win = xterm_win.clone();
-            move |_h| {
-            let handle = xterm_win.raw_handle();
-            std::process::Command::new("xterm")
-            .args(&["-into", &format!("{}", handle), "-bg", "black", "-fg", "white"])
-            .spawn()
-            .unwrap();
-        }});
+        // app::add_timeout3(0.1, {
+        //     let xterm_win = xterm_win.clone();
+        //     move |_h| {
+        //     let handle = xterm_win.raw_handle();
+        //     std::process::Command::new("xterm")
+        //     .args(&["-into", &format!("{}", handle), "-bg", "black", "-fg", "white"])
+        //     .spawn()
+        //     .unwrap();
+        // }});
 
         Self {
             xterm_win
