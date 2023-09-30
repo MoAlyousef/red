@@ -23,7 +23,11 @@ fn main() {
                 env::set_current_dir(path.clone()).unwrap();
             } else {
                 current_file = Some(PathBuf::from(path.file_name().unwrap()));
-                env::set_current_dir(path.parent().unwrap()).unwrap();
+                if let Some(parent) = path.parent() {
+                    if parent.exists() {
+                        env::set_current_dir(parent).unwrap();
+                    }
+                }
             }
         }
         path

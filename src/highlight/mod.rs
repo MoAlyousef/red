@@ -8,7 +8,7 @@ mod rust;
 mod toml;
 
 fn translate_style(idx: usize) -> char {
-    char::from_u32(65 + idx as u32).unwrap()
+    char::from_u32(65 + idx as u32 + 1).unwrap()
 }
 
 struct HighlightData {

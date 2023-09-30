@@ -15,10 +15,17 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "number",
     "operator",
     "punctuation",
+    "constant.builtin",
 ];
 
 pub fn styles() -> Vec<StyleTableEntry> {
     vec![
+        StyleTableEntry {
+            // default
+            color: Color::Foreground,
+            font: Font::Courier,
+            size: 14,
+        },
         StyleTableEntry {
             // prop
             color: Color::Red,
@@ -52,6 +59,12 @@ pub fn styles() -> Vec<StyleTableEntry> {
         StyleTableEntry {
             // =
             color: Color::White,
+            font: Font::Courier,
+            size: 14,
+        },
+        StyleTableEntry {
+            // =
+            color: Color::Yellow,
             font: Font::Courier,
             size: 14,
         },

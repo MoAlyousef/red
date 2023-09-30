@@ -20,10 +20,17 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "string",
     "type",
     "variable",
+    "label",
 ];
 
 pub fn styles() -> Vec<StyleTableEntry> {
     vec![
+        StyleTableEntry {
+            // default
+            color: Color::Foreground,
+            font: Font::Courier,
+            size: 14,
+        },
         StyleTableEntry {
             // attr
             color: Color::Red,
@@ -87,6 +94,12 @@ pub fn styles() -> Vec<StyleTableEntry> {
         StyleTableEntry {
             // var
             color: Color::Yellow,
+            font: Font::Courier,
+            size: 14,
+        },
+        StyleTableEntry {
+            // label
+            color: Color::White,
             font: Font::Courier,
             size: 14,
         },
