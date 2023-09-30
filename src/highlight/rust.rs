@@ -45,7 +45,7 @@ pub fn styles() -> Vec<StyleTableEntry> {
         },
         StyleTableEntry {
             // const
-            color: Color::DarkYellow,
+            color: Color::Green,
             font: Font::Courier,
             size: 14,
         },
@@ -57,7 +57,7 @@ pub fn styles() -> Vec<StyleTableEntry> {
         },
         StyleTableEntry {
             // kwd
-            color: Color::Cyan.lighter(),
+            color: Color::Magenta.lighter(),
             font: Font::Courier,
             size: 14,
         },

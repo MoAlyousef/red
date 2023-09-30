@@ -7,12 +7,13 @@ use std::{
     io::{Read, Write},
     mem, str, thread,
 };
+use crate::state::STATE;
 
-pub struct AnsiTerm {
+pub struct PPTerm {
     st: text::SimpleTerminal,
 }
 
-impl AnsiTerm {
+impl PPTerm {
     pub fn new() -> Self {
         let mut st = text::SimpleTerminal::default().with_id("term");
         // SimpleTerminal handles many common ansi escape sequence
@@ -92,10 +93,35 @@ impl AnsiTerm {
             });
         }
 
-        st.handle(move |_t, ev| match ev {
+        let mut cmd = String::new();
+        st.handle(move |t, ev| match ev {
             Event::KeyDown => {
-                writer.write_all(app::event_text().as_bytes()).unwrap();
+                let key = app::event_key();
+                if key == Key::Up || key == Key::Down {
+                    writer.write_all(STATE.with(|s| s.cmds.cmds.last().unwrap().clone()).as_bytes()).unwrap();
+                    t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
+                } else {
+                    let txt = app::event_text();
+                    if txt == "\r" {
+                        STATE.with({
+                            let cmd = cmd.clone();
+                            move |s| s.cmds.push(&cmd)
+                        });
+                        cmd.clear();
+                    } else {
+                        cmd.push_str(&txt);
+                    }
+                    writer.write_all(txt.as_bytes()).unwrap();
+                }
                 true
+            },
+            Event::KeyUp => {
+                if app::event_key() == Key::Up {
+                    t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
+                    true
+                } else {
+                    false
+                }
             }
             _ => false,
         });
@@ -122,31 +148,43 @@ impl AnsiTerm {
     }
 }
 
-fltk::widget_extends!(AnsiTerm, text::SimpleTerminal, st);
+fltk::widget_extends!(PPTerm, text::SimpleTerminal, st);
 
-pub struct Xterm {
+pub struct XTerm {
     xterm_win: window::Window,
 }
 
-impl Xterm {
+impl XTerm {
     pub fn new() -> Self {
         let mut xterm_win = window::Window::default().with_id("term");
         xterm_win.end();
         xterm_win.set_color(Color::Black);
-        // app::add_timeout3(0.1, {
-        //     let xterm_win = xterm_win.clone();
-        //     move |_h| {
-        //     let handle = xterm_win.raw_handle();
-        //     std::process::Command::new("xterm")
-        //     .args(&["-into", &format!("{}", handle), "-bg", "black", "-fg", "white"])
-        //     .spawn()
-        //     .unwrap();
-        // }});
-
-        Self {
-            xterm_win
+        if crate::utils::is_session_x11() {}
+        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+        {
+            if crate::utils::is_session_x11() {
+                app::add_timeout3(0.1, {
+                    let xterm_win = xterm_win.clone();
+                    move |_h| {
+                        let handle = xterm_win.raw_handle();
+                        std::process::Command::new("xterm")
+                            .args(&[
+                                "-into",
+                                &format!("{}", handle),
+                                "-bg",
+                                "black",
+                                "-fg",
+                                "white",
+                            ])
+                            .spawn()
+                            .unwrap();
+                    }
+                });
+            }
         }
+
+        Self { xterm_win }
     }
 }
 
-fltk::widget_extends!(Xterm, window::Window, xterm_win);
+fltk::widget_extends!(XTerm, window::Window, xterm_win);

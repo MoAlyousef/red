@@ -318,7 +318,13 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
 
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
-    let term: text::SimpleTerminal = app::widget_from_id("term").unwrap();
+    let term = if let Some(t) = app::widget_from_id::<text::SimpleTerminal>("term") {
+        t.as_base_widget()
+    } else if let Some(t) = app::widget_from_id::<window::Window>("term") {
+        t.as_base_widget()
+    } else {
+        panic!("What");
+    };
     match ev {
         Event::Push => true,
         Event::Drag => {
@@ -367,4 +373,30 @@ pub fn strip_unc_path(p: &Path) -> String {
     } else {
         p.to_string()
     }
+}
+
+pub fn is_session_x11() -> bool {
+    if let Ok(var) = env::var("XDG_SESSION_TYPE") {
+        var == "x11"
+    } else {
+        false
+    }
+}
+
+pub fn create_term() -> impl WidgetExt {
+    use crate::term;
+    let term;
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        term = if utils::is_session_x11() {
+            term::XTerm::new()
+        } else {
+            term::PPTerm::new()
+        };
+    }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
+        term = term::PPTerm::new();
+    }
+    term.clone()
 }

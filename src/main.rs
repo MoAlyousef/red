@@ -89,8 +89,8 @@ fn main() {
     let mut tab_splitter = frame::Frame::default();
     tab_splitter.handle(utils::tab_splitter_cb);
     col.fixed(&tab_splitter, 4);
-    let term = term::AnsiTerm::new();
-    col.fixed(&*term, 160);
+    let term = utils::create_term();
+    col.fixed(&term, 160);
     col.end();
     row.end();
     let info = frame::Frame::default()

@@ -16,6 +16,19 @@ use std::{
 
 static COUNT: AtomicU32 = AtomicU32::new(0);
 
+#[derive(Clone, Debug, Default)]
+pub struct Commands {
+    idx: usize,
+    pub cmds: Vec<String>,
+}
+
+impl Commands {
+    pub fn push(&mut self, s: &str) {
+        self.cmds.push(s.to_string());
+        self.idx = self.cmds.len();
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct MyBuffer {
     pub modified: bool,
@@ -27,12 +40,13 @@ pub struct MyBuffer {
 pub struct State {
     pub map: HashMap<usize, MyBuffer>,
     pub current_dir: PathBuf,
+    pub cmds: Commands,
 }
 
 impl State {
     pub fn new(current_dir: PathBuf) -> Self {
         let map = HashMap::default();
-        State { map, current_dir }
+        State { map, current_dir, cmds: Commands::default() }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
         let mut open = false;
