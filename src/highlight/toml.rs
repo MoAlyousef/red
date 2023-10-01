@@ -1,76 +1,23 @@
-use fltk::{
-    enums::*,
-    text::{StyleTableEntry, TextBuffer},
-};
+use fltk::{enums::*, text::TextBuffer};
 use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
 use tree_sitter_toml as ts;
 
-const HIGHLIGHT_NAMES: &[&str] = &[
-    "property",
-    "comment",
-    "string",
-    "number",
-    "operator",
-    "punctuation",
-    "constant.builtin",
-];
-
-pub fn styles() -> Vec<StyleTableEntry> {
+pub fn styles() -> Vec<(&'static str, Color)> {
     vec![
-        StyleTableEntry {
-            // default
-            color: Color::Foreground,
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // prop
-            color: Color::Red,
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // comment
-            color: Color::Foreground.darker(),
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // str
-            color: Color::Green.darker(),
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // num
-            color: Color::Green.darker(),
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // punct
-            color: Color::White,
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // =
-            color: Color::White,
-            font: Font::Courier,
-            size: 14,
-        },
-        StyleTableEntry {
-            // =
-            color: Color::Yellow,
-            font: Font::Courier,
-            size: 14,
-        },
+        ("", Color::Foreground),
+        ("property", Color::Red),
+        ("comment", Color::Foreground.darker()),
+        ("string", Color::Green.darker()),
+        ("number", Color::Green.darker()),
+        ("operator", Color::White),
+        ("punctuation", Color::White),
+        ("constant.builtin", Color::Yellow),
     ]
 }
 
-pub fn apply(s: &str, sbuf: &mut TextBuffer) {
-    sbuf.set_text(&crate::apply_!(s));
+pub fn apply(s: &str, sbuf: &mut TextBuffer, names: &[&str]) {
+    sbuf.set_text(&crate::apply_!(s, names));
 }

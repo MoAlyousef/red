@@ -1,4 +1,6 @@
 use fltk::{
+    app,
+    enums::{Color, Font},
     prelude::DisplayExt,
     text::{StyleTableEntry, TextBuffer, TextEditor},
 };
@@ -11,13 +13,31 @@ fn translate_style(idx: usize) -> char {
     char::from_u32(65 + idx as u32 + 1).unwrap()
 }
 
+fn resolve_styles(v: Vec<(&'static str, Color)>) -> (Vec<&'static str>, Vec<StyleTableEntry>) {
+    let mut names = Vec::new();
+    let mut styles = Vec::new();
+    for elem in v {
+        names.push(elem.0);
+        styles.push(StyleTableEntry {
+            color: elem.1,
+            font: Font::Courier,
+            size: app::font_size(),
+        });
+    }
+    names.remove(0);
+    (names, styles)
+}
+
 struct HighlightData {
-    styles: Vec<StyleTableEntry>,
-    func: fn(s: &str, sbuf: &mut TextBuffer),
+    styles: Vec<(&'static str, Color)>,
+    func: fn(s: &str, sbuf: &mut TextBuffer, names: &[&str]),
 }
 
 impl HighlightData {
-    pub fn new(s: Vec<StyleTableEntry>, f: fn(s: &str, sbuf: &mut TextBuffer)) -> Self {
+    pub fn new(
+        s: Vec<(&'static str, Color)>,
+        f: fn(s: &str, sbuf: &mut TextBuffer, names: &[&str]),
+    ) -> Self {
         Self { styles: s, func: f }
     }
 }
@@ -36,13 +56,14 @@ fn get_highlight(p: &Path) -> Option<HighlightData> {
 
 pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
     if let Some(HighlightData { styles, func }) = get_highlight(p) {
+        let (names, styles) = resolve_styles(styles);
         let mut sbuf = TextBuffer::default();
         ed.set_highlight_data(sbuf.clone(), styles);
-        func(&buf.text(), &mut sbuf);
+        func(&buf.text(), &mut sbuf, &names);
         buf.add_modify_callback({
             let buf = buf.clone();
             move |_, _, _, _, _| {
-                func(&buf.text(), &mut sbuf);
+                func(&buf.text(), &mut sbuf, &names);
             }
         });
     }
@@ -50,13 +71,13 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
 
 #[macro_export]
 macro_rules! apply_ {
-    ($s:tt) => {{
+    ($s:tt, $names: tt) => {{
         let mut highlighter = Highlighter::new();
 
         let lang = ts::language();
 
         let mut config = HighlightConfiguration::new(lang, ts::HIGHLIGHT_QUERY, "", "").unwrap();
-        config.configure(HIGHLIGHT_NAMES);
+        config.configure($names);
         let highlights = highlighter
             .highlight(&config, $s.as_bytes(), None, |_| None)
             .unwrap();

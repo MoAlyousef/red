@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::{cbs, highlight};
 use fltk::{
     app::{self, WidgetId},
     enums::*,
@@ -65,17 +66,17 @@ impl State {
                 })
                 .with_id(&id);
             edrow.set_trigger(CallbackTrigger::Closed);
-            edrow.set_callback(crate::utils::tab_close_cb);
+            edrow.set_callback(cbs::tab_close_cb);
             let mut ed = text::TextEditor::default().with_id("ed");
             ed.set_buffer(buf.clone());
-            crate::utils::init_editor(&mut ed);
+            cbs::init_editor(&mut ed);
             edrow.end();
             tabs.end();
             tabs.auto_layout();
             tabs.set_value(&edrow).ok();
             if let Some(p) = current_path.as_ref() {
                 buf.load_file(p).ok();
-                crate::highlight::highlight(p, &mut ed, &mut buf);
+                highlight::highlight(p, &mut ed, &mut buf);
             }
             let mybuf = MyBuffer {
                 modified: false,
@@ -169,3 +170,9 @@ impl State {
 }
 
 pub static STATE: Lazy<app::GlobalState<State>> = Lazy::new(app::GlobalState::<State>::get);
+
+pub fn init_state(current_file: Option<PathBuf>, current_path: PathBuf) {
+    let mut state = State::new(current_path);
+    state.append(current_file);
+    app::GlobalState::new(state);
+}
