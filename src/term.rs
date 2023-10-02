@@ -108,7 +108,7 @@ impl PPTerm {
                     } else if key == Key::Down {
                         writer.lock().unwrap().write_all(b"\x0E").unwrap();
                     } else if key == Key::from_char('v') && app::event_state() == EventState::Ctrl {
-                        dbg!("paste event");
+                        app::paste(t);
                     } else {
                         let txt = app::event_text();
                         writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
@@ -122,6 +122,11 @@ impl PPTerm {
                     } else {
                         false
                     }
+                }
+                Event::Paste => {
+                    let txt = app::event_text();
+                    writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
+                    true
                 }
                 _ => false,
             }
