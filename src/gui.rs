@@ -60,13 +60,8 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let mut tab_splitter = frame::Frame::default();
     tab_splitter.handle(cbs::tab_splitter_cb);
     col.fixed(&tab_splitter, 4);
-    if utils::can_use_xterm() {
-        let term = term::XTerm::new();
-        col.fixed(&*term, 160);
-    } else {
-        let term = term::PPTerm::new();
-        col.fixed(&*term, 160);
-    }
+    let term = term::PPTerm::new();
+    col.fixed(&*term, 160);
     col.end();
     row.end();
     let info = frame::Frame::default()

@@ -238,6 +238,7 @@ dependencies = [
  "fltk",
  "fltk-theme",
  "portable-pty",
+ "tree-sitter",
  "tree-sitter-highlight",
  "tree-sitter-rust",
  "tree-sitter-toml",
