@@ -107,6 +107,8 @@ impl PPTerm {
                         t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
                     } else if key == Key::Down {
                         writer.lock().unwrap().write_all(b"\x0E").unwrap();
+                    } else if key == Key::from_char('v') && app::event_state() == EventState::Ctrl {
+                        dbg!("paste event");
                     } else {
                         let txt = app::event_text();
                         writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();

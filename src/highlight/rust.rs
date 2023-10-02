@@ -1,4 +1,4 @@
-use tree_sitter::Language;
+use super::HighlightData;
 
 use tree_sitter_rust as ts;
 
@@ -33,6 +33,32 @@ pub const STYLES: &[(&str, u32)] = &[
     ("label", WHITE),
 ];
 
-pub fn lang_data() -> (Language, &'static str) {
-    (ts::language(), ts::HIGHLIGHT_QUERY)
+pub fn lang_data() -> HighlightData {
+    let (names, styles) = super::resolve_styles(STYLES);
+    HighlightData::new(
+        names,
+        styles,
+        ts::language(),
+        ts::HIGHLIGHT_QUERY,
+        Some(handle_keyword),
+    )
 }
+
+fn handle_keyword(idx: usize, s: &str) -> char {
+    if idx == 7 {
+        if KWDS.contains(&s) {
+            'H'
+        } else {
+            'B'
+        }
+    } else {
+        super::translate_style(idx)
+    }
+}
+
+const KWDS: &[&str] = &[
+    "as", "break", "const", "continue", "crate", "else", "enum", "extern", "false", "fn", "for",
+    "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return",
+    "self", "Self", "static", "struct", "super", "trait", "true", "type", "unsafe", "use", "where",
+    "while", "async", "await", "dyn",
+];

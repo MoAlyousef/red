@@ -11,7 +11,8 @@ tree-sitter = { version = "0.20", optional = true }
 tree-sitter-highlight = { version = "0.20", optional = true }
 tree-sitter-rust = { version = "0.20", optional = true }
 tree-sitter-toml = { version = "0.20", optional = true }
-tree-sitter-markdown = { version = "0.7", optional = true }
+tree-sitter-md = { version = "0.1", optional = true }
+# tree-sitter-cpp = { version = "0.20", optional = true }
 
 [features]
 default = ["highlight"]
@@ -20,7 +21,8 @@ highlight = [
     "tree-sitter-highlight", 
     "tree-sitter-rust", 
     "tree-sitter-toml", 
-    "tree-sitter-markdown"
+    "tree-sitter-md",
+    # "tree-sitter-cpp"
     ]
 
 [profile.release]
