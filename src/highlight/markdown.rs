@@ -1,6 +1,6 @@
 use tree_sitter::Language;
 
-use tree_sitter_toml as ts;
+use tree_sitter_markdown as ts;
 
 const RED: u32 = 0xe06c75;
 const GREEN: u32 = 0x98c379;

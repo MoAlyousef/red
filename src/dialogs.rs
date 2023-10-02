@@ -50,6 +50,17 @@ impl FindDialog {
         row.fixed(&b, 60);
         row.end();
         win.end();
+        win.handle(|win, ev| match ev {
+            enums::Event::Hide => {
+                win.hide();
+                true
+            }
+            enums::Event::Close => {
+                win.hide();
+                true
+            }
+            _ => false,
+        });
         Self { win }
     }
 }
@@ -94,6 +105,17 @@ impl ReplaceDialog {
         row.end();
         col.end();
         win.end();
+        win.handle(|win, ev| match ev {
+            enums::Event::Hide => {
+                win.hide();
+                true
+            }
+            enums::Event::Close => {
+                win.hide();
+                true
+            }
+            _ => false,
+        });
         Self { win }
     }
 }

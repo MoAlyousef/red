@@ -13,19 +13,9 @@ pub fn strip_unc_path(p: &Path) -> String {
     }
 }
 
-pub fn can_use_xterm() -> bool {
-    if cfg!(not(any(target_os = "macos", target_os = "windows"))) {
-        if let Ok(var) = env::var("XDG_SESSION_TYPE") {
-            var == "x11" && has_program("xterm")
-        } else {
-            env::var("RED_XTERM").is_ok()
-        }
-    } else {
-        false
-    }
-}
-
+#[allow(dead_code)]
 pub fn has_program(prog: &str) -> bool {
+    // hacky
     match Command::new(prog).arg("--version").output() {
         Ok(out) => !out.stdout.is_empty(),
         _ => false,
@@ -57,4 +47,17 @@ pub fn init_args(args: env::Args) -> (Option<PathBuf>, PathBuf) {
 
     let current_path = env::current_dir().unwrap().canonicalize().unwrap();
     (current_file, current_path)
+}
+
+#[allow(dead_code)]
+pub fn can_use_xterm() -> bool {
+    if cfg!(not(any(target_os = "macos", target_os = "windows"))) {
+        if let Ok(var) = env::var("XDG_SESSION_TYPE") {
+            var == "x11" && has_program("xterm")
+        } else {
+            env::var("RED_XTERM").is_ok()
+        }
+    } else {
+        false
+    }
 }

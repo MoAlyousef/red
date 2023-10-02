@@ -10,6 +10,7 @@ use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
+// mod markdown;
 mod rust;
 mod toml;
 
@@ -60,6 +61,7 @@ fn get_highlight(p: &Path) -> Option<HighlightData> {
         match ext.to_str().unwrap() {
             "rs" => Some(HighlightData::new(rust::STYLES, rust::lang_data())),
             "toml" => Some(HighlightData::new(toml::STYLES, toml::lang_data())),
+            // "md" => Some(HighlightData::new(markdown::STYLES, markdown::lang_data())),
             _ => None,
         }
     } else {

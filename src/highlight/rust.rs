@@ -2,26 +2,35 @@ use tree_sitter::Language;
 
 use tree_sitter_rust as ts;
 
+const GREEN: u32 = 0x98c379;
+const RED: u32 = 0xe06c75;
+const YELLOW: u32 = 0xe5c07b;
+const DARKYELLOW: u32 = 0xc69a66;
+const WHITE: u32 = 0xabb2bf;
+const BLUE: u32 = 0x61afef;
+const PURPLE: u32 = 0xc678dd;
+const GREY: u32 = 0x808080;
+
 pub const STYLES: &[(&str, u32)] = &[
-    ("attribute", 0xfa0000),
-    ("constructor", 0x00ffff),
-    ("comment", 0x808080),
-    ("constant", 0x00ff00),
-    ("constant.builtin", 0x6897bb),
-    ("function", 0x00ffff),
-    ("function.method", 0x00ffff),
-    ("keyword", 0x9876aa),
-    ("operator", 0xd8d8d8),
-    ("property", 0xcc7832),
-    ("punctuation.bracket", 0xcc7832),
-    ("punctuation.delimiter", 0xcc7832),
-    ("string", 0x629755),
-    ("type", 0xcc7832),
-    ("type.builtin", 0x32cd32),
-    ("variable", 0xeedd82),
-    ("variable.builtin", 0xeedd82),
-    ("variable.parameter", 0x32cd32),
-    ("label", 0xffffff),
+    ("attribute", RED),
+    ("constructor", DARKYELLOW),
+    ("comment", GREY),
+    ("constant", DARKYELLOW),
+    ("constant.builtin", DARKYELLOW),
+    ("function", BLUE),
+    ("function.method", BLUE),
+    ("keyword", PURPLE),
+    ("operator", WHITE),
+    ("property", RED),
+    ("punctuation.bracket", DARKYELLOW),
+    ("punctuation.delimiter", WHITE),
+    ("string", GREEN),
+    ("type", YELLOW),
+    ("type.builtin", YELLOW),
+    ("variable", RED),
+    ("variable.builtin", RED),
+    ("variable.parameter", WHITE),
+    ("label", WHITE),
 ];
 
 pub fn lang_data() -> (Language, &'static str) {
