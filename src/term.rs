@@ -2,15 +2,19 @@
 
 use crate::utils;
 use fltk::{enums::*, prelude::*, *};
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, CommandBuilder, PtyPair, PtySize};
 use std::{
     env,
-    io::{Read, Write},
-    mem, str, thread,
+    io::{self, Read, Write},
+    str,
+    sync::{Arc, Mutex},
+    thread,
 };
 
 pub struct PPTerm {
     st: text::SimpleTerminal,
+    pair: Arc<Mutex<PtyPair>>,
+    writer: Arc<Mutex<Box<dyn Write + Send>>>,
 }
 
 impl PPTerm {
@@ -38,8 +42,9 @@ impl PPTerm {
 
         let mut child = pair.slave.spawn_command(cmd).unwrap();
         let mut reader = pair.master.try_clone_reader().unwrap();
-        let mut writer = pair.master.take_writer().unwrap();
-        mem::forget(pair);
+        let writer = pair.master.take_writer().unwrap();
+        let pair = Arc::new(Mutex::new(pair));
+        let writer = Arc::new(Mutex::new(writer));
 
         #[cfg(not(windows))]
         {
@@ -93,29 +98,32 @@ impl PPTerm {
             });
         }
 
-        st.handle(move |t, ev| match ev {
-            Event::KeyDown => {
-                let key = app::event_key();
-                if key == Key::Up {
-                    writer.write_all(b"\x10").unwrap();
-                    t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
-                } else if key == Key::Down {
-                    writer.write_all(b"\x0E").unwrap();
-                } else {
-                    let txt = app::event_text();
-                    writer.write_all(txt.as_bytes()).unwrap();
-                }
-                true
-            }
-            Event::KeyUp => {
-                if app::event_key() == Key::Up {
-                    t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
+        st.handle({
+            let writer = writer.clone();
+            move |t, ev| match ev {
+                Event::KeyDown => {
+                    let key = app::event_key();
+                    if key == Key::Up {
+                        writer.lock().unwrap().write_all(b"\x10").unwrap();
+                        t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
+                    } else if key == Key::Down {
+                        writer.lock().unwrap().write_all(b"\x0E").unwrap();
+                    } else {
+                        let txt = app::event_text();
+                        writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
+                    }
                     true
-                } else {
-                    false
                 }
+                Event::KeyUp => {
+                    if app::event_key() == Key::Up {
+                        t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
+                        true
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
             }
-            _ => false,
         });
 
         st.set_cursor_style(text::Cursor::Dim);
@@ -136,7 +144,11 @@ impl PPTerm {
             }
         });
 
-        Self { st }
+        Self { st, pair, writer }
+    }
+
+    pub fn write_all(&self, s: &[u8]) -> Result<(), io::Error> {
+        self.writer.lock().unwrap().write_all(s)
     }
 }
 

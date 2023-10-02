@@ -2,26 +2,26 @@ use tree_sitter::Language;
 
 use tree_sitter_rust as ts;
 
-pub const STYLES: &[(&str, &str)] = &[
-    ("attribute", "#fa0000"),
-    ("constructor", "#00ffff"),
-    ("comment", "#808080"),
-    ("constant", "#00ff00"),
-    ("constant.builtin", "#6897bb"),
-    ("function", "#00ffff"),
-    ("function.method", "#00ffff"),
-    ("keyword", "#9876aa"),
-    ("operator", "#d8d8d8"),
-    ("property", "#cc7832"),
-    ("punctuation.bracket", "#cc7832"),
-    ("punctuation.delimiter", "#cc7832"),
-    ("string", "#629755"),
-    ("type", "#cc7832"),
-    ("type.builtin", "#32cd32"),
-    ("variable", "#eedd82"),
-    ("variable.builtin", "#eedd82"),
-    ("variable.parameter", "#32cd32"),
-    ("label", "#ffffff"),
+pub const STYLES: &[(&str, u32)] = &[
+    ("attribute", 0xfa0000),
+    ("constructor", 0x00ffff),
+    ("comment", 0x808080),
+    ("constant", 0x00ff00),
+    ("constant.builtin", 0x6897bb),
+    ("function", 0x00ffff),
+    ("function.method", 0x00ffff),
+    ("keyword", 0x9876aa),
+    ("operator", 0xd8d8d8),
+    ("property", 0xcc7832),
+    ("punctuation.bracket", 0xcc7832),
+    ("punctuation.delimiter", 0xcc7832),
+    ("string", 0x629755),
+    ("type", 0xcc7832),
+    ("type.builtin", 0x32cd32),
+    ("variable", 0xeedd82),
+    ("variable.builtin", 0xeedd82),
+    ("variable.parameter", 0x32cd32),
+    ("label", 0xffffff),
 ];
 
 pub fn lang_data() -> (Language, &'static str) {

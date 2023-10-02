@@ -17,7 +17,7 @@ fn translate_style(idx: usize) -> char {
     char::from_u32(65 + idx as u32 + 1).unwrap()
 }
 
-fn resolve_styles(v: &[(&'static str, &'static str,)]) -> (Vec<&'static str>, Vec<StyleTableEntry>) {
+fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTableEntry>) {
     let mut names = Vec::new();
     let mut styles = Vec::new();
     styles.push(StyleTableEntry {
@@ -28,7 +28,7 @@ fn resolve_styles(v: &[(&'static str, &'static str,)]) -> (Vec<&'static str>, Ve
     for elem in v {
         names.push(elem.0);
         styles.push(StyleTableEntry {
-            color: Color::from_hex_str(elem.1).unwrap(),
+            color: Color::from_hex(elem.1),
             font: Font::Courier,
             size: app::font_size(),
         });
@@ -44,12 +44,14 @@ struct HighlightData {
 }
 
 impl HighlightData {
-    pub fn new(
-        s: &[(&'static str, &'static str,)],
-        lang_data: (Language, &'static str),
-    ) -> Self {
+    pub fn new(s: &[(&'static str, u32)], lang_data: (Language, &'static str)) -> Self {
         let (names, styles) = resolve_styles(s);
-        Self { names, styles, lang: lang_data.0, hq: lang_data.1 }
+        Self {
+            names,
+            styles,
+            lang: lang_data.0,
+            hq: lang_data.1,
+        }
     }
 }
 
@@ -66,7 +68,13 @@ fn get_highlight(p: &Path) -> Option<HighlightData> {
 }
 
 pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
-    if let Some(HighlightData { names, styles, lang, hq }) = get_highlight(p) {
+    if let Some(HighlightData {
+        names,
+        styles,
+        lang,
+        hq,
+    }) = get_highlight(p)
+    {
         let mut highlighter = Highlighter::new();
         let mut config = HighlightConfiguration::new(lang, hq, "", "").unwrap();
         config.configure(&names);
@@ -82,7 +90,12 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
     }
 }
 
-fn apply(highlighter: &mut Highlighter, config: &HighlightConfiguration, s: &str, sbuf: &mut TextBuffer) {
+fn apply(
+    highlighter: &mut Highlighter,
+    config: &HighlightConfiguration,
+    s: &str,
+    sbuf: &mut TextBuffer,
+) {
     let highlights = highlighter
         .highlight(config, s.as_bytes(), None, |_| None)
         .unwrap();

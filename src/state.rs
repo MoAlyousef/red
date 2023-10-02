@@ -1,14 +1,7 @@
 #![allow(dead_code)]
 
-use crate::{cbs, highlight};
-use fltk::{
-    app::{self, WidgetId},
-    enums::*,
-    group,
-    prelude::*,
-    text,
-    utils::oncelock::Lazy,
-};
+use crate::gui;
+use fltk::{app, group, prelude::*, text, utils::oncelock::Lazy};
 use std::collections::HashMap;
 use std::{
     path::PathBuf,
@@ -36,8 +29,8 @@ impl State {
         State { map, current_dir }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
-        let mut open = false;
         let mut tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
+        let mut open = false;
         let mut edid = 0;
         for (k, v) in &self.map {
             if v.current_file == current_path {
@@ -50,38 +43,11 @@ impl State {
             let old_count = COUNT.load(Ordering::Relaxed);
             let id = format!("edrow{}", old_count);
             COUNT.store(old_count + 1, Ordering::Relaxed);
-            let mut buf = text::TextBuffer::default();
-            buf.set_tab_distance(4);
-            tabs.begin();
-            let mut edrow = group::Flex::default()
-                .row()
-                .with_label(if let Some(current_path) = current_path.as_ref() {
-                    if current_path.is_dir() {
-                        "untitled"
-                    } else {
-                        current_path.file_name().unwrap().to_str().unwrap()
-                    }
-                } else {
-                    "untitled"
-                })
-                .with_id(&id);
-            edrow.set_trigger(CallbackTrigger::Closed);
-            edrow.set_callback(cbs::tab_close_cb);
-            let mut ed = text::TextEditor::default().with_id("ed");
-            ed.set_buffer(buf.clone());
-            cbs::init_editor(&mut ed);
-            edrow.end();
-            tabs.end();
-            tabs.auto_layout();
-            tabs.set_value(&edrow).ok();
-            if let Some(p) = current_path.as_ref() {
-                buf.load_file(p).ok();
-                highlight::highlight(p, &mut ed, &mut buf);
-            }
+            let ed = gui::create_ed(&mut tabs, &id, &current_path);
             let mybuf = MyBuffer {
                 modified: false,
                 id,
-                buf,
+                buf: ed.buffer().unwrap().clone(),
                 current_file: current_path,
             };
             self.map.insert(ed.as_widget_ptr() as usize, mybuf);
