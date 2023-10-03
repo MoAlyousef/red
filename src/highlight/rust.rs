@@ -1,4 +1,7 @@
+#![allow(dead_code)]
+
 use super::HighlightData;
+use tree_sitter_highlight::HighlightConfiguration;
 
 use tree_sitter_rust as ts;
 
@@ -12,7 +15,7 @@ const PURPLE: u32 = 0xc678dd;
 const GREY: u32 = 0x808080;
 
 pub const STYLES: &[(&str, u32)] = &[
-    ("DEFAULT", YELLOW),
+    ("DEFAULT", WHITE),
     ("attribute", RED),
     ("constructor", DARKYELLOW),
     ("comment", GREY),
@@ -36,14 +39,10 @@ pub const STYLES: &[(&str, u32)] = &[
 
 pub fn lang_data() -> HighlightData {
     let (names, styles) = super::resolve_styles(STYLES);
-    HighlightData::new(
-        names,
-        styles,
-        ts::language(),
-        ts::HIGHLIGHT_QUERY,
-        // Some(handle_keyword),
-        None
-    )
+    let mut config =
+        HighlightConfiguration::new(ts::language(), ts::HIGHLIGHT_QUERY, "", "").unwrap();
+    config.configure(&names);
+    HighlightData::new(styles, config, None)
 }
 
 fn handle_keyword(idx: usize, s: &str) -> char {

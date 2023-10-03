@@ -5,12 +5,10 @@ use fltk::{
     text::{StyleTableEntry, TextBuffer, TextEditor},
 };
 use std::path::Path;
-use tree_sitter::Language;
 use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
-// mod cpp;
 mod md;
 mod rust;
 mod toml;
@@ -34,27 +32,21 @@ fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTab
 }
 
 pub struct HighlightData {
-    names: Vec<&'static str>,
     styles: Vec<StyleTableEntry>,
-    lang: Language,
-    hq: &'static str,
-    special_fn: Option<fn(usize, &str) -> char>,
+    config: HighlightConfiguration,
+    exeption_fn: Option<fn(usize, &str) -> char>,
 }
 
 impl HighlightData {
     pub fn new(
-        names: Vec<&'static str>,
         styles: Vec<StyleTableEntry>,
-        lang: Language,
-        hq: &'static str,
-        special_fn: Option<fn(usize, &str) -> char>,
+        config: HighlightConfiguration,
+        exeption_fn: Option<fn(usize, &str) -> char>,
     ) -> Self {
         Self {
-            names,
             styles,
-            lang,
-            hq,
-            special_fn,
+            config,
+            exeption_fn,
         }
     }
 }
@@ -65,7 +57,6 @@ fn get_highlight(p: &Path) -> Option<HighlightData> {
             "rs" => Some(rust::lang_data()),
             "toml" => Some(toml::lang_data()),
             "md" => Some(md::lang_data()),
-            // "c" | "cpp" | "cxx" | "h" | "hpp" | "hxx" => Some(cpp::lang_data()),
             _ => None,
         }
     } else {
@@ -75,16 +66,12 @@ fn get_highlight(p: &Path) -> Option<HighlightData> {
 
 pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
     if let Some(HighlightData {
-        names,
         styles,
-        lang,
-        hq,
-        special_fn,
+        config,
+        exeption_fn,
     }) = get_highlight(p)
     {
         let mut highlighter = Highlighter::new();
-        let mut config = HighlightConfiguration::new(lang, hq, "", "").unwrap();
-        config.configure(&names);
         let mut sbuf = TextBuffer::default();
         ed.set_highlight_data(sbuf.clone(), styles);
         apply(
@@ -92,7 +79,7 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
             &config,
             &buf.text(),
             &mut sbuf,
-            &special_fn,
+            &exeption_fn,
         );
         buf.add_modify_callback({
             let buf = buf.clone();
@@ -102,7 +89,7 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
                     &config,
                     &buf.text(),
                     &mut sbuf,
-                    &special_fn,
+                    &exeption_fn,
                 );
             }
         });
@@ -114,7 +101,7 @@ fn apply(
     config: &HighlightConfiguration,
     s: &str,
     sbuf: &mut TextBuffer,
-    special_fn: &Option<fn(usize, &str) -> char>,
+    exeption_fn: &Option<fn(usize, &str) -> char>,
 ) {
     let highlights = highlighter
         .highlight(config, s.as_bytes(), None, |_| None)
@@ -128,7 +115,7 @@ fn apply(
                 curr = s.0;
             }
             HighlightEvent::Source { start, end } => {
-                let c = if let Some(f) = special_fn {
+                let c = if let Some(f) = exeption_fn {
                     f(curr, &s[start..end])
                 } else {
                     translate_style(curr)
