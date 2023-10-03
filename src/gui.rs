@@ -51,7 +51,6 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     if current_file.is_none() {
         row.fixed(&fbr, 180);
     } else {
-        w.set_label(&format!("{} - RustyEd", current_path.display()));
         row.fixed(&fbr, 1);
     }
     let mut fbr_splitter = frame::Frame::default();
