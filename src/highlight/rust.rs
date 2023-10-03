@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::HighlightData;
 use tree_sitter_highlight::HighlightConfiguration;
 
@@ -44,22 +42,3 @@ pub fn lang_data() -> HighlightData {
     config.configure(&names);
     HighlightData::new(styles, config, None)
 }
-
-fn handle_keyword(idx: usize, s: &str) -> char {
-    if idx == 7 {
-        if KWDS.contains(&s) {
-            'H'
-        } else {
-            'B'
-        }
-    } else {
-        super::translate_style(idx)
-    }
-}
-
-const KWDS: &[&str] = &[
-    "as", "break", "const", "continue", "crate", "else", "enum", "extern", "false", "fn", "for",
-    "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return",
-    "self", "Self", "static", "struct", "super", "trait", "true", "type", "unsafe", "use", "where",
-    "while", "async", "await", "dyn",
-];
