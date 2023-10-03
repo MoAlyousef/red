@@ -16,17 +16,12 @@ mod rust;
 mod toml;
 
 fn translate_style(idx: usize) -> char {
-    char::from_u32(65 + idx as u32 + 1).unwrap()
+    char::from_u32(65 + idx as u32).unwrap()
 }
 
 fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTableEntry>) {
     let mut names = Vec::new();
     let mut styles = Vec::new();
-    styles.push(StyleTableEntry {
-        color: Color::Foreground,
-        font: Font::Courier,
-        size: app::font_size(),
-    });
     for elem in v {
         names.push(elem.0);
         styles.push(StyleTableEntry {
@@ -126,7 +121,6 @@ fn apply(
         .unwrap();
 
     let mut local_buf = "A".repeat(s.len());
-    let mut c;
     let mut curr = 0;
     for event in highlights {
         match event.unwrap() {
@@ -134,14 +128,14 @@ fn apply(
                 curr = s.0;
             }
             HighlightEvent::Source { start, end } => {
-                if let Some(f) = special_fn {
-                    c = f(curr, &s[start..end]);
+                let c = if let Some(f) = special_fn {
+                    f(curr, &s[start..end])
                 } else {
-                    c = translate_style(curr);
-                }
+                    translate_style(curr)
+                };
                 local_buf.replace_range(start..end, &c.to_string().repeat(end - start));
             }
-            HighlightEvent::HighlightEnd => (),
+            HighlightEvent::HighlightEnd => curr = 0,
         }
     }
     sbuf.set_text(&local_buf);

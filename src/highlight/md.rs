@@ -7,6 +7,7 @@ const GREEN: u32 = 0x98c379;
 const DARKYELLOW: u32 = 0xc69a66;
 
 pub const STYLES: &[(&str, u32)] = &[
+    ("DEFAULT", 0xfafafa),
     ("text.title", RED),
     ("text.reference", 0x808080),
     ("punctuation.special", GREEN),

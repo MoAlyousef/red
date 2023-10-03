@@ -10,6 +10,7 @@ const BLUE: u32 = 0x61afef;
 const PURPLE: u32 = 0xc678dd;
 
 pub const STYLES: &[(&str, u32)] = &[
+    ("DEFAULT", 0xffffff),
     ("constant", DARKYELLOW),
     ("function", BLUE),
     ("keyword", PURPLE),

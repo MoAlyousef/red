@@ -12,6 +12,7 @@ const PURPLE: u32 = 0xc678dd;
 const GREY: u32 = 0x808080;
 
 pub const STYLES: &[(&str, u32)] = &[
+    ("DEFAULT", YELLOW),
     ("attribute", RED),
     ("constructor", DARKYELLOW),
     ("comment", GREY),
@@ -40,7 +41,8 @@ pub fn lang_data() -> HighlightData {
         styles,
         ts::language(),
         ts::HIGHLIGHT_QUERY,
-        Some(handle_keyword),
+        // Some(handle_keyword),
+        None
     )
 }
 
