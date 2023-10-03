@@ -200,15 +200,10 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
     }
 }
 
+#[cfg(feature = "portable-pty")]
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
-    let term = if let Some(t) = app::widget_from_id::<text::SimpleTerminal>("term") {
-        t.as_base_widget()
-    } else if let Some(t) = app::widget_from_id::<window::Window>("term") {
-        t.as_base_widget()
-    } else {
-        panic!("What");
-    };
+    let term = app::widget_from_id::<text::SimpleTerminal>("term").unwrap();
     match ev {
         Event::Push => true,
         Event::Drag => {

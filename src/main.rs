@@ -3,10 +3,14 @@ use std::env;
 mod cbs;
 mod dialogs;
 mod gui;
-mod highlight;
 mod state;
-mod term;
 mod utils;
+
+#[cfg(feature = "highlight")]
+mod highlight;
+
+#[cfg(feature = "portable-pty")]
+mod term;
 
 fn main() {
     let (current_file, current_path) = utils::init_args(env::args());

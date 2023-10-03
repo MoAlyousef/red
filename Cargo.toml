@@ -6,14 +6,14 @@ edition = "2021"
 [dependencies]
 fltk = "1.4.13"
 fltk-theme = "0.7"
-portable-pty = "0.8"
+portable-pty = { version = "0.8", optional = true }
 tree-sitter-highlight = { version = "0.20", optional = true }
 tree-sitter-rust = { version = "0.20", optional = true }
 tree-sitter-toml = { version = "0.20", optional = true }
 tree-sitter-md = { version = "0.1", optional = true }
 
 [features]
-default = ["highlight"]
+default = ["highlight", "portable-pty"]
 highlight = [
     "tree-sitter-highlight", 
     "tree-sitter-rust", 

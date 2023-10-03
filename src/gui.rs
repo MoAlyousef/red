@@ -1,7 +1,13 @@
-use crate::{cbs, dialogs, highlight, term, utils};
+use crate::{cbs, dialogs, utils};
 use fltk::{enums::*, prelude::*, *};
 use fltk_theme::{SchemeType, WidgetScheme};
 use std::path::{Path, PathBuf};
+
+#[cfg(feature = "portable-pty")]
+use crate::term;
+
+#[cfg(feature = "highlight")]
+use crate::highlight;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
@@ -57,11 +63,14 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
-    let mut tab_splitter = frame::Frame::default();
-    tab_splitter.handle(cbs::tab_splitter_cb);
-    col.fixed(&tab_splitter, 4);
-    let term = term::PPTerm::new();
-    col.fixed(&*term, 160);
+    #[cfg(feature = "portable-pty")]
+    {
+        let mut tab_splitter = frame::Frame::default();
+        tab_splitter.handle(cbs::tab_splitter_cb);
+        col.fixed(&tab_splitter, 4);
+        let term = term::PPTerm::new();
+        col.fixed(&*term, 160);
+    }
     col.end();
     row.end();
     let info = frame::Frame::default()
@@ -173,13 +182,16 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     if load_dir {
         m.at(idx).unwrap().set();
     }
-    let idx = m.add(
-        "&View/Terminal\t",
-        Shortcut::Ctrl | 'h',
-        menu::MenuFlag::Toggle,
-        cbs::menu_cb,
-    );
-    m.at(idx).unwrap().set();
+    #[cfg(feature = "portable-pty")]
+    {
+        let idx = m.add(
+            "&View/Terminal\t",
+            Shortcut::Ctrl | 'h',
+            menu::MenuFlag::Toggle,
+            cbs::menu_cb,
+        );
+        m.at(idx).unwrap().set();
+    }
     m.add(
         "&Help/About\t",
         Shortcut::None,
@@ -229,6 +241,7 @@ pub fn create_ed(
     buf.set_tab_distance(4);
     if let Some(p) = current_path.as_ref() {
         buf.load_file(p).ok();
+        #[cfg(feature = "highlight")]
         highlight::highlight(p, &mut ed, &mut buf);
     }
     ed.set_buffer(buf);
