@@ -1,16 +1,8 @@
 use super::HighlightData;
 use tree_sitter_highlight::HighlightConfiguration;
+use super::colors::*;
 
 use tree_sitter_rust as ts;
-
-const GREEN: u32 = 0x98c379;
-const RED: u32 = 0xe06c75;
-const YELLOW: u32 = 0xe5c07b;
-const DARKYELLOW: u32 = 0xc69a66;
-const WHITE: u32 = 0xabb2bf;
-const BLUE: u32 = 0x61afef;
-const PURPLE: u32 = 0xc678dd;
-const GREY: u32 = 0x808080;
 
 pub const STYLES: &[(&str, u32)] = &[
     ("DEFAULT", WHITE),

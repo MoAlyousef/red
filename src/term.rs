@@ -1,10 +1,11 @@
 #![allow(dead_code)]
 
 use fltk::{enums::*, prelude::*, *};
-use portable_pty::{native_pty_system, CommandBuilder, PtyPair, PtySize};
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
     env,
     io::{self, Read, Write},
+    mem,
     str,
     sync::{Arc, Mutex},
     thread,
@@ -12,7 +13,6 @@ use std::{
 
 pub struct PPTerm {
     st: text::SimpleTerminal,
-    pair: Arc<Mutex<PtyPair>>,
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
 }
 
@@ -31,6 +31,7 @@ impl PPTerm {
             .expect("Failed to create pty");
 
         let mut cmd = if cfg!(target_os = "windows") {
+            env::set_var("TERM", "xterm-mono");
             CommandBuilder::new("cmd.exe")
         } else {
             env::set_var("TERM", "vt100");
@@ -38,12 +39,11 @@ impl PPTerm {
         };
         cmd.cwd(env::current_dir().unwrap());
         cmd.env("PATH", env::var("PATH").unwrap());
-
+        
         let mut child = pair.slave.spawn_command(cmd).unwrap();
         let mut reader = pair.master.try_clone_reader().unwrap();
         let writer = pair.master.take_writer().unwrap();
-        let pair = Arc::new(Mutex::new(pair));
-        let writer = Arc::new(Mutex::new(writer));
+        mem::forget(pair);
 
         #[cfg(not(windows))]
         {
@@ -52,7 +52,7 @@ impl PPTerm {
                 move || {
                     let mut s = Vec::new();
                     while child.try_wait().is_ok() {
-                        let mut msg = [0u8; 1024];
+                        let mut msg = [0u8; 4096];
                         if let Ok(sz) = reader.read(&mut msg) {
                             let msg = &msg[0..sz];
                             s.extend_from_slice(&msg[0..sz]);
@@ -80,11 +80,10 @@ impl PPTerm {
         #[cfg(windows)]
         {
             // windows quirk
-            app::sleep(0.03);
+            app::sleep(0.05);
             thread::spawn({
                 let mut st = st.clone();
                 move || {
-                    // let mut s = Vec::new();
                     while child.try_wait().is_ok() {
                         let mut msg = [0u8; 1024];
                         if let Ok(sz) = reader.read(&mut msg) {
@@ -96,6 +95,8 @@ impl PPTerm {
                 }
             });
         }
+
+        let writer = Arc::new(Mutex::new(writer));
 
         st.handle({
             let writer = writer.clone();
@@ -150,7 +151,7 @@ impl PPTerm {
             }
         });
 
-        Self { st, pair, writer }
+        Self { st, writer }
     }
 
     pub fn write_all(&self, s: &[u8]) -> Result<(), io::Error> {

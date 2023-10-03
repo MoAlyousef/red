@@ -1,20 +1,16 @@
 use super::HighlightData;
 use tree_sitter_highlight::HighlightConfiguration;
+use super::colors::*;
 
 use tree_sitter_md as ts;
-
-const WHITE: u32 = 0xabb2bf;
-const RED: u32 = 0xe06c75;
-const GREEN: u32 = 0x98c379;
-const DARKYELLOW: u32 = 0xc69a66;
 
 pub const STYLES: &[(&str, u32)] = &[
     ("DEFAULT", WHITE),
     ("text.title", RED),
-    ("text.reference", 0x808080),
+    ("text.reference", GREY),
     ("punctuation.special", RED),
     ("text.literal", GREEN),
-    ("punctuation.delimiter", 0xc69a66),
+    ("punctuation.delimiter", DARKYELLOW),
     ("text.uri", DARKYELLOW),
 ];
 

@@ -15,3 +15,8 @@ To disable building with tree-sitter:
 ```bash
 cargo build --no-default-features --release
 ```
+
+![image](https://github.com/MoAlyousef/red/assets/37966791/c43a180f-d1db-4528-ace6-d3713dcda202)
+
+## Known issues
+- On Windows, the terminal defaults to cmd. Still some of the ansi escape sequences aren't handled on newer Windows versions, and setting the TERM env variable appears not to work (at least on my system).

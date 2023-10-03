@@ -9,6 +9,7 @@ use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
+mod colors;
 mod md;
 mod rust;
 mod toml;
