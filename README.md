@@ -20,3 +20,4 @@ cargo build --no-default-features --release
 
 ## Known issues
 - On Windows, the terminal defaults to cmd. Still some of the ansi escape sequences aren't handled on newer Windows versions, and setting the TERM env variable appears not to work (at least on my system).
+- If you're running linux and no icons appear in the FileBrowser, you probably need to install icon files or upgrade your system!
