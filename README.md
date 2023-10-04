@@ -16,6 +16,11 @@ To disable building with tree-sitter and the terminal:
 cargo build --no-default-features --release
 ```
 
+To build with native wayland support on Linux:
+```bash
+cargo build --features=fltk/use-wayland --release
+```
+
 ![image](https://github.com/MoAlyousef/red/assets/37966791/c43a180f-d1db-4528-ace6-d3713dcda202)
 
 ## Known issues

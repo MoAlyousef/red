@@ -86,8 +86,8 @@ impl Perform for VteParser {
     fn print(&mut self, c: char) {
         let mut tmp = [0u8; 4];
         let s = c.encode_utf8(&mut tmp);
-        self.st.append(s);
-        self.sbuf.append(self.ch);
+        self.st.append2(s.as_bytes());
+        self.sbuf.append2(self.ch.as_bytes());
     }
 
     fn execute(&mut self, byte: u8) {
