@@ -28,6 +28,7 @@ term = [
     "portable-pty",
     "vte"
 ]
+use-wayland = ["fltk/use-wayland"]
 
 [profile.release]
 strip = true

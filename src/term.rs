@@ -127,7 +127,7 @@ impl Perform for VteParser {
         println!("[osc_dispatch] params={:?} bell_terminated={}", params, bell_terminated);
     }
 
-    fn csi_dispatch(&mut self, params: &Params, _intermediates: &[u8], _ignore: bool, c: char) {
+    fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: char) {
         match c {
             'm' => {
                 for p in params {
@@ -150,7 +150,10 @@ impl Perform for VteParser {
                 }
             },
             _ => {
-                println!("ignored csi char {}", c);
+                println!(
+                    "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+                    params, intermediates, ignore, c
+                );
             },
         }
     }
@@ -186,10 +189,8 @@ impl PPTerm {
             .expect("Failed to create pty");
 
         let mut cmd = if cfg!(target_os = "windows") {
-            env::set_var("TERM", "xterm-mono");
             CommandBuilder::new("cmd.exe")
         } else {
-            env::set_var("TERM", "vt100");
             CommandBuilder::new("/bin/bash")
         };
         cmd.cwd(env::current_dir().unwrap());
