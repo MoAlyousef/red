@@ -203,7 +203,7 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
 #[cfg(feature = "term")]
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
-    let term = app::widget_from_id::<text::SimpleTerminal>("term").unwrap();
+    let term = app::widget_from_id::<text::TextDisplay>("term").unwrap();
     match ev {
         Event::Push => true,
         Event::Drag => {

@@ -89,14 +89,14 @@ fn styles() -> Vec<text::StyleTableEntry> {
 
 struct VteParser {
     ch: char,
-    st: text::SimpleTerminal,
+    st: text::TextDisplay,
     sbuf: text::TextBuffer,
     temp_s: String,
     temp_b: String,
 }
 
 impl VteParser {
-    pub fn new(st: text::SimpleTerminal, sbuf: text::TextBuffer) -> Self {
+    pub fn new(st: text::TextDisplay, sbuf: text::TextBuffer) -> Self {
         Self {
             ch: 'A',
             st,
@@ -106,7 +106,11 @@ impl VteParser {
         }
     }
     pub fn myprint(&mut self) {
-        self.st.append(&self.temp_s);
+        let mut buf = self.st.buffer().unwrap();
+        buf.append(&self.temp_s);
+        self.st.set_insert_position(buf.length());
+        self.st
+            .scroll(self.st.count_lines(0, buf.length(), true), 0);
         self.sbuf.append(&self.temp_b);
         self.temp_s.clear();
         self.temp_b.clear();
@@ -137,7 +141,7 @@ impl Perform for VteParser {
                 self.temp_s.push(byte as char);
                 self.temp_b.push(self.ch);
             }
-            0 | 7 => (),
+            0 | 7 => (), // tabs?
             _ => {
                 debug!("unhandled byte: {}", byte);
             }
@@ -182,7 +186,10 @@ impl Perform for VteParser {
                         [39] => self.ch = 'J',
                         [0] => self.ch = 'A',
                         _ => {
-                            debug!("ignored m param: {:?}", p);
+                            // debug!(
+                            //     "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+                            //     params, intermediates, ignore, c
+                            // );
                             self.ch = 'A';
                         }
                     }
@@ -206,13 +213,19 @@ impl Perform for VteParser {
 }
 
 pub struct PPTerm {
-    st: text::SimpleTerminal,
+    st: text::TextDisplay,
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
 }
 
 impl PPTerm {
     pub fn new() -> Self {
-        let mut st = text::SimpleTerminal::default().with_id("term");
+        let mut st = text::TextDisplay::default().with_id("term");
+        st.show_cursor(true);
+        st.set_color(Color::Black);
+        st.set_cursor_style(text::Cursor::Block);
+        st.wrap_mode(text::WrapMode::AtBounds, 0);
+        let buf = text::TextBuffer::default();
+        st.set_buffer(buf);
         let styles = styles();
         let sbuf = text::TextBuffer::default();
         st.set_highlight_data(sbuf.clone(), styles);
@@ -269,24 +282,17 @@ impl PPTerm {
                     let key = app::event_key();
                     if key == Key::Up {
                         writer.lock().unwrap().write_all(UP).unwrap();
-                        t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
                     } else if key == Key::Down {
                         writer.lock().unwrap().write_all(DOWN).unwrap();
-                    } else if key == Key::from_char('v') && app::event_state() == EventState::Ctrl {
-                        app::paste(t);
+                    } else if key == Key::from_char('v')
+                        && app::event_state() == EventState::Ctrl | EventState::Shift
+                    {
+                        app::paste_text2(t);
                     } else {
                         let txt = app::event_text();
                         writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
                     }
                     true
-                }
-                Event::KeyUp => {
-                    if app::event_key() == Key::Up {
-                        t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
-                        true
-                    } else {
-                        false
-                    }
                 }
                 Event::Paste => {
                     let txt = app::event_text();
@@ -294,24 +300,6 @@ impl PPTerm {
                     true
                 }
                 _ => false,
-            }
-        });
-
-        st.set_cursor_style(text::Cursor::Dim);
-        // for a blinking cursors
-        app::add_timeout3(1.0, {
-            let mut st = st.clone();
-            move |h| {
-                if !st.has_focus() {
-                    if st.cursor_style() == text::Cursor::Block {
-                        st.set_cursor_style(text::Cursor::Dim);
-                    } else {
-                        st.set_cursor_style(text::Cursor::Block);
-                    }
-                } else {
-                    st.set_cursor_style(text::Cursor::Block);
-                }
-                app::repeat_timeout3(1.0, h);
             }
         });
 
@@ -323,4 +311,4 @@ impl PPTerm {
     }
 }
 
-fltk::widget_extends!(PPTerm, text::SimpleTerminal, st);
+fltk::widget_extends!(PPTerm, text::TextDisplay, st);
