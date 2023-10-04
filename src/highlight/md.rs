@@ -1,6 +1,6 @@
+use super::colors::*;
 use super::HighlightData;
 use tree_sitter_highlight::HighlightConfiguration;
-use super::colors::*;
 
 use tree_sitter_md as ts;
 
