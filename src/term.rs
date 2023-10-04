@@ -12,6 +12,9 @@ use std::{
 };
 use vte::{Params, Parser, Perform};
 
+const UP: &[u8] = if cfg!(not(target_os = "windows")) { b"\x10" } else { b"\x1b[A" };
+const DOWN: &[u8] = if cfg!(not(target_os = "windows")) { b"\x0E" } else { b"\x1b[B" };
+
 fn styles() -> Vec<text::StyleTableEntry> {
     vec![
         text::StyleTableEntry {
@@ -226,10 +229,10 @@ impl PPTerm {
                 Event::KeyDown => {
                     let key = app::event_key();
                     if key == Key::Up {
-                        writer.lock().unwrap().write_all(b"\x10").unwrap();
+                        writer.lock().unwrap().write_all(UP).unwrap();
                         t.scroll(t.count_lines(0, t.buffer().unwrap().length(), true), 0);
                     } else if key == Key::Down {
-                        writer.lock().unwrap().write_all(b"\x0E").unwrap();
+                        writer.lock().unwrap().write_all(DOWN).unwrap();
                     } else if key == Key::from_char('v') && app::event_state() == EventState::Ctrl {
                         app::paste(t);
                     } else {
