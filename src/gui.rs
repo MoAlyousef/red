@@ -3,7 +3,7 @@ use fltk::{enums::*, prelude::*, *};
 use fltk_theme::{SchemeType, WidgetScheme};
 use std::path::{Path, PathBuf};
 
-#[cfg(feature = "portable-pty")]
+#[cfg(feature = "term")]
 use crate::term;
 
 #[cfg(feature = "highlight")]
@@ -62,7 +62,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
-    #[cfg(feature = "portable-pty")]
+    #[cfg(feature = "term")]
     {
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
@@ -181,7 +181,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     if load_dir {
         m.at(idx).unwrap().set();
     }
-    #[cfg(feature = "portable-pty")]
+    #[cfg(feature = "term")]
     {
         let idx = m.add(
             "&View/Terminal\t",

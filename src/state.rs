@@ -48,11 +48,7 @@ impl State {
                 modified: false,
                 id,
                 buf: ed.buffer().unwrap().clone(),
-                current_file: if let Some(p) = current_path {
-                    Some(p.canonicalize().unwrap())
-                } else {
-                    None
-                },
+                current_file: current_path.map(|p| p.canonicalize().unwrap()),
             };
             self.map.insert(ed.as_widget_ptr() as usize, mybuf);
         } else {

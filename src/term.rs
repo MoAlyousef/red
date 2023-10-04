@@ -10,6 +10,155 @@ use std::{
     sync::{Arc, Mutex},
     thread,
 };
+use vte::{Params, Parser, Perform};
+
+fn styles() -> Vec<text::StyleTableEntry> {
+    vec![
+        text::StyleTableEntry {
+            color: Color::White,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::Red,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::Green,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::Yellow,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::from_hex(0x61afef),
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::Magenta,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::Cyan,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::White,
+            font: Font::Courier,
+            size: 14,
+        },
+        text::StyleTableEntry {
+            color: Color::Foreground,
+            font: Font::Courier,
+            size: 14,
+        },
+        
+    ]
+}
+
+struct VteParser {
+    ch: &'static str,
+    st: text::SimpleTerminal,
+    sbuf: text::TextBuffer,
+}
+
+impl VteParser {
+    pub fn new(st: text::SimpleTerminal, sbuf: text::TextBuffer) -> Self {
+        Self {
+            ch: "A",
+            st,
+            sbuf,
+        }
+    }
+}
+
+impl Perform for VteParser {
+    fn print(&mut self, c: char) {
+        let mut tmp = [0u8; 4];
+        let s = c.encode_utf8(&mut tmp);
+        self.st.append(s);
+        self.sbuf.append(self.ch);
+    }
+
+    fn execute(&mut self, byte: u8) {
+        match byte {
+            8 => { // backspace
+                let mut buf = self.st.buffer().unwrap();
+                buf.remove(buf.length() - 1, buf.length());
+                self.sbuf.remove(buf.length() - 1, buf.length());
+            },
+            10 | 13 => { // crlf
+                self.st.append(&(byte as char).to_string());
+                self.sbuf.append(self.ch);
+            },
+            0 | 7 => (),
+            _ => {
+                println!("unhandled byte: {}", byte);
+            }
+        }
+    }
+
+    fn hook(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: char) {
+        println!(
+            "[hook] params={:?}, intermediates={:?}, ignore={:?}, char={:?}",
+            params, intermediates, ignore, c
+        );
+    }
+
+    fn put(&mut self, byte: u8) {
+        println!("[put] {:02x}", byte);
+    }
+
+    fn unhook(&mut self) {
+        println!("[unhook]");
+    }
+
+    fn osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) {
+        println!("[osc_dispatch] params={:?} bell_terminated={}", params, bell_terminated);
+    }
+
+    fn csi_dispatch(&mut self, params: &Params, _intermediates: &[u8], _ignore: bool, c: char) {
+        match c {
+            'm' => {
+                for p in params {
+                    match p {
+                        [31] => self.ch = "B",
+                        [32] => self.ch = "C",
+                        [33] => self.ch = "D",
+                        [34] => self.ch = "E",
+                        [35] => self.ch = "F",
+                        [36] => self.ch = "G",
+                        [37] => self.ch = "H",
+                        [38] => self.ch = "I",
+                        [39] => self.ch = "J",
+                        [0] => self.ch = "A",
+                        _ => {
+                            // println!("ignored m param: {:?}", p);
+                            self.ch = "A";
+                        }
+                    }
+                }
+            },
+            _ => {
+                println!("ignored csi char {}", c);
+            },
+        }
+    }
+
+    fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
+        println!(
+            "[esc_dispatch] intermediates={:?}, ignore={:?}, byte={:02x}",
+            intermediates, ignore, byte
+        );
+    }
+}
 
 pub struct PPTerm {
     st: text::SimpleTerminal,
@@ -19,8 +168,11 @@ pub struct PPTerm {
 impl PPTerm {
     pub fn new() -> Self {
         let mut st = text::SimpleTerminal::default().with_id("term");
+        let styles = styles();
+        let sbuf = text::TextBuffer::default();
+        st.set_highlight_data(sbuf.clone(), styles);
         // SimpleTerminal handles many common ansi escape sequence
-        st.set_ansi(true);
+        // st.set_ansi(true);
         let pair = native_pty_system()
             .openpty(PtySize {
                 cols: 80,
@@ -44,59 +196,29 @@ impl PPTerm {
         let mut reader = pair.master.try_clone_reader().unwrap();
         let writer = pair.master.take_writer().unwrap();
         mem::forget(pair);
+        let writer = Arc::new(Mutex::new(writer));
 
-        #[cfg(not(windows))]
-        {
-            thread::spawn({
-                let mut st = st.clone();
-                move || {
-                    let mut s = Vec::new();
-                    while child.try_wait().is_ok() {
-                        let mut msg = [0u8; 4096];
-                        if let Ok(sz) = reader.read(&mut msg) {
-                            let msg = &msg[0..sz];
-                            s.extend_from_slice(&msg[0..sz]);
-                            match str::from_utf8(&s) {
-                                Ok(text) => {
-                                    if text != "\x07" {
-                                        st.append(text);
-                                    }
-                                    s.clear();
-                                }
-                                Err(z) => {
-                                    let z = z.valid_up_to();
-                                    st.append2(&msg[0..z]);
-                                    s.extend_from_slice(&msg[z..]);
-                                }
-                            }
-                            app::awake();
-                        }
-                        app::sleep(0.03);
-                    }
-                }
-            });
-        }
+        let mut statemachine = Parser::new();
+        let mut performer = VteParser::new(st.clone(), sbuf);
 
         #[cfg(windows)]
-        {
-            // windows quirk
-            app::sleep(0.05);
-            thread::spawn({
-                let mut st = st.clone();
-                move || {
-                    while child.try_wait().is_ok() {
-                        let mut msg = [0u8; 1024];
-                        if let Ok(sz) = reader.read(&mut msg) {
-                            let msg = &msg[0..sz];
-                            st.append2(msg);
-                        }
-                        app::sleep(0.03);
-                    }
-                }
-            });
-        }
+        app::sleep(0.05);
 
-        let writer = Arc::new(Mutex::new(writer));
+        thread::spawn({
+            move || {
+                while child.try_wait().is_ok() {
+                    let mut msg = [0u8; 4096];
+                    if let Ok(sz) = reader.read(&mut msg) {
+                        let msg = &msg[0..sz];
+                        for byte in msg {
+                            statemachine.advance(&mut performer, *byte);
+                        }
+                        app::awake();
+                    }
+                    app::sleep(0.03);
+                }
+            }
+        });
 
         st.handle({
             let writer = writer.clone();

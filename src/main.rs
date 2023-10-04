@@ -9,7 +9,7 @@ mod utils;
 #[cfg(feature = "highlight")]
 mod highlight;
 
-#[cfg(feature = "portable-pty")]
+#[cfg(feature = "term")]
 mod term;
 
 fn main() {
