@@ -29,8 +29,9 @@ impl FindDialog {
             move |i| {
                 let val = i.value();
                 let reg_val = reg.value();
-                if regex::Regex::new(&val).is_err() {
+                if reg_val && regex::Regex::new(&val).is_err() {
                     i.set_text_color(enums::Color::Red);
+                    return;
                 }
                 if !val.is_empty() {
                     STATE.with({
@@ -40,6 +41,7 @@ impl FindDialog {
                                 let text = buf.text();
                                 if reg_val {
                                     if let Ok(re) = regex::Regex::new(&val) {
+                                        // TODO check v size
                                         let v: Vec<_> = re.find_iter(&text).map(|m| m.range()).collect();
                                         let mut idx = idx.borrow_mut();
                                         let curr = &v[*idx];
@@ -52,6 +54,7 @@ impl FindDialog {
                                         }
                                     }
                                 } else {
+                                    // TODO check v size
                                     let v: Vec<_> = text.match_indices(&val).collect();
                                     let mut idx = idx.borrow_mut();
                                     let curr = v[*idx];
