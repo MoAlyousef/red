@@ -109,14 +109,13 @@ impl VteParser {
     }
     pub fn myprint(&mut self) {
         let mut buf = self.st.buffer().unwrap();
-        dbg!(self.insert_pos);
-        buf.append(&self.temp_s);
-        dbg!(buf.length());
-
+        buf.remove(self.insert_pos, self.insert_pos + 1);
+        buf.insert(self.insert_pos, &self.temp_s);
+        self.sbuf.remove(self.insert_pos, self.insert_pos + 1);
+        self.sbuf.insert(self.insert_pos, &self.temp_b);
         self.st.set_insert_position(self.insert_pos);
         self.st
             .scroll(self.st.count_lines(0, buf.length(), true), 0);
-        self.sbuf.append(&self.temp_b);
         self.temp_s.clear();
         self.temp_b.clear();
     }
@@ -202,11 +201,9 @@ impl Perform for VteParser {
                     match p {
                         [0] => {
                             let mut buf = self.st.buffer().unwrap();
-                            let c = buf.text().chars().last().unwrap();
-                            let mut tmp = [0u8; 4];
-                            let s = c.encode_utf8(&mut tmp);
-                            buf.remove(buf.length() - s.len() as i32, buf.length());
-                            self.sbuf.remove(self.sbuf.length() - 1, self.sbuf.length());
+                            buf.remove(self.insert_pos, self.insert_pos + 1);
+                            self.sbuf.remove(self.insert_pos, self.insert_pos + 1);
+                            self.insert_pos -= 1;
                         }
                         _ => {
                             debug!(
@@ -222,6 +219,25 @@ impl Perform for VteParser {
                     match p {
                         [0] => {
                             self.insert_pos += 1;
+                        }
+                        _ => {
+                            debug!(
+                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+                                params, intermediates, ignore, c
+                            );
+                        }
+                    }
+                }
+            }
+            'H' => {
+                self.insert_pos = 0;
+            }
+            'J' => {
+                for p in params {
+                    match p {
+                        [2] => {
+                            self.st.buffer().unwrap().set_text("");
+                            self.st.style_buffer().unwrap().set_text("");
                         }
                         _ => {
                             debug!(
