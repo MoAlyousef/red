@@ -93,7 +93,6 @@ struct VteParser {
     sbuf: text::TextBuffer,
     temp_s: String,
     temp_b: String,
-    insert_pos: i32,
 }
 
 impl VteParser {
@@ -104,16 +103,13 @@ impl VteParser {
             sbuf,
             temp_s: String::new(),
             temp_b: String::new(),
-            insert_pos: 0,
         }
     }
     pub fn myprint(&mut self) {
         let mut buf = self.st.buffer().unwrap();
-        buf.remove(self.insert_pos, self.insert_pos + 1);
-        buf.insert(self.insert_pos, &self.temp_s);
-        self.sbuf.remove(self.insert_pos, self.insert_pos + 1);
-        self.sbuf.insert(self.insert_pos, &self.temp_b);
-        self.st.set_insert_position(self.insert_pos);
+        buf.append2(&self.temp_s.as_bytes());
+        self.sbuf.append2(&self.temp_b.as_bytes());
+        self.st.set_insert_position(buf.length());
         self.st
             .scroll(self.st.count_lines(0, buf.length(), true), 0);
         self.temp_s.clear();
@@ -123,24 +119,25 @@ impl VteParser {
 
 impl Perform for VteParser {
     fn print(&mut self, c: char) {
-        let mut tmp = [0u8; 4];
-        let s = c.encode_utf8(&mut tmp);
-        self.temp_s.push_str(s);
+        self.temp_s.push(c);
         self.temp_b.push(self.ch);
-        self.insert_pos += 1;
     }
 
     fn execute(&mut self, byte: u8) {
         match byte {
             8 => {
                 // backspace
-                self.insert_pos -= 1;
+                let mut buf = self.st.buffer().unwrap();
+                let ch = buf.text().chars().last().unwrap();
+                let mut temp = [0u8;4];
+                let s = ch.encode_utf8(&mut temp);
+                buf.remove(buf.length() - s.len() as i32, buf.length());
+                self.sbuf.remove(buf.length() - 1, buf.length());
             }
             10 | 13 => {
                 // crlf
                 self.temp_s.push(byte as char);
                 self.temp_b.push(self.ch);
-                self.insert_pos += 1;
             }
             0 | 7 => (), // tabs?
             _ => {
@@ -200,10 +197,7 @@ impl Perform for VteParser {
                 for p in params {
                     match p {
                         [0] => {
-                            let mut buf = self.st.buffer().unwrap();
-                            buf.remove(self.insert_pos, self.insert_pos + 1);
-                            self.sbuf.remove(self.insert_pos, self.insert_pos + 1);
-                            self.insert_pos -= 1;
+                            // erase from cursor to end of line
                         }
                         _ => {
                             debug!(
@@ -218,7 +212,7 @@ impl Perform for VteParser {
                 for p in params {
                     match p {
                         [0] => {
-                            self.insert_pos += 1;
+                            // self.insert_pos += 1;
                         }
                         _ => {
                             debug!(
@@ -230,7 +224,7 @@ impl Perform for VteParser {
                 }
             }
             'H' => {
-                self.insert_pos = 0;
+                // self.insert_pos = 0;
             }
             'J' => {
                 for p in params {
@@ -354,6 +348,14 @@ impl PPTerm {
                 Event::Paste => {
                     let txt = app::event_text();
                     writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
+                    true
+                }
+                Event::Push => {
+                    if app::event_mouse_button() == app::MouseButton::Right {
+                        if let Some(term_menu) = app::widget_from_id::<menu::MenuButton>("pop2") {
+                            term_menu.popup();
+                        }
+                    }
                     true
                 }
                 _ => false,

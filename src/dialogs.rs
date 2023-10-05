@@ -20,24 +20,48 @@ impl FindDialog {
         row.fixed(&f, 30);
         let mut i = input::Input::default();
         i.set_trigger(enums::CallbackTrigger::EnterKeyAlways);
+        let mut reg = button::ToggleButton::default().with_label(".*");
+        reg.set_selection_color(reg.color().lighter());
+        reg.set_tooltip("Use regex");
+        row.fixed(&reg, 30);
+        let mut b = button::Button::default().with_label("Next");
         i.set_callback({
             move |i| {
                 let val = i.value();
+                let reg_val = reg.value();
+                if regex::Regex::new(&val).is_err() {
+                    i.set_text_color(enums::Color::Red);
+                }
                 if !val.is_empty() {
                     STATE.with({
                         let idx = idx.clone();
                         move |s| {
                             if let Some(buf) = s.buf().as_mut() {
                                 let text = buf.text();
-                                let v: Vec<_> = text.match_indices(&val).collect();
-                                let mut idx = idx.borrow_mut();
-                                let curr = v[*idx];
-                                let mut ed: text::TextEditor = s.current_editor().unwrap();
-                                buf.select(curr.0 as i32, (curr.0 + val.len()) as i32);
-                                ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
-                                *idx += 1;
-                                if *idx == v.len() {
-                                    *idx = 0;
+                                if reg_val {
+                                    if let Ok(re) = regex::Regex::new(&val) {
+                                        let v: Vec<_> = re.find_iter(&text).map(|m| m.range()).collect();
+                                        let mut idx = idx.borrow_mut();
+                                        let curr = &v[*idx];
+                                        let mut ed: text::TextEditor = s.current_editor().unwrap();
+                                        buf.select(curr.start as i32, curr.end as i32);
+                                        ed.scroll(ed.count_lines(0, curr.start as i32, true), 0);
+                                        *idx += 1;
+                                        if *idx == v.len() {
+                                            *idx = 0;
+                                        }
+                                    }
+                                } else {
+                                    let v: Vec<_> = text.match_indices(&val).collect();
+                                    let mut idx = idx.borrow_mut();
+                                    let curr = v[*idx];
+                                    let mut ed: text::TextEditor = s.current_editor().unwrap();
+                                    buf.select(curr.0 as i32, (curr.0 + val.len()) as i32);
+                                    ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
+                                    *idx += 1;
+                                    if *idx == v.len() {
+                                        *idx = 0;
+                                    }
                                 }
                             }
                         }
@@ -45,7 +69,6 @@ impl FindDialog {
                 }
             }
         });
-        let mut b = button::Button::default().with_label("Next");
         b.set_callback(move |_| i.do_callback());
         row.fixed(&b, 60);
         row.end();

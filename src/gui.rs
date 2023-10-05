@@ -22,6 +22,8 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     app::set_background2_color(0x28, 0x2c, 0x34);
     app::set_foreground_color(0xab, 0xb2, 0xa2);
     app::set_color(Color::Selection, 0x32, 0x38, 0x42);
+    // todo
+    app::set_color(Color::Inactive, 88, 0, 0);
 
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
@@ -34,6 +36,10 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         .with_size(WIDTH, HEIGHT)
         .with_label("RustyEd");
     w.set_xclass("red");
+    let mut fbr_menu = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3).with_id("pop1");
+    fbr_menu.add_choice("New File");
+    let mut term_menu = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3).with_id("pop2");
+    term_menu.add_choice("Paste");
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
     let mut m = menu::SysMenuBar::default().with_id("menu");
@@ -53,6 +59,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     } else {
         row.fixed(&fbr, 1);
     }
+    fbr.resize_callback(move |_, x, y, w, h| fbr_menu.resize(x, y, w, h));
     let mut fbr_splitter = frame::Frame::default();
     fbr_splitter.handle(cbs::fbr_splitter_cb);
     row.fixed(&fbr_splitter, 4);
@@ -67,7 +74,8 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
         col.fixed(&tab_splitter, 4);
-        let term = term::PPTerm::new();
+        let mut term = term::PPTerm::new();
+        term.resize_callback(move |_, x, y, w, h| term_menu.resize(x, y, w, h));
         col.fixed(&*term, 160);
     }
     col.end();

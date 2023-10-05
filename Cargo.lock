@@ -244,6 +244,7 @@ dependencies = [
  "fltk",
  "fltk-theme",
  "portable-pty",
+ "regex",
  "tree-sitter-highlight",
  "tree-sitter-md",
  "tree-sitter-rust",

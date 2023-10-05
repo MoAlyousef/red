@@ -127,7 +127,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&View/Terminal\t" => {
                 let mut item = m.at(m.value()).unwrap();
-                let term: text::SimpleTerminal = app::widget_from_id("term").unwrap();
+                let term: text::TextDisplay = app::widget_from_id("term").unwrap();
                 let mut parent: group::Flex = unsafe { term.parent().unwrap().into_widget() };
                 if !item.value() {
                     parent.fixed(&term, 1);
@@ -148,6 +148,10 @@ pub fn menu_cb(m: &mut impl MenuExt) {
 }
 
 pub fn fbr_cb(f: &mut browser::FileBrowser) {
+    if app::event_mouse_button() == app::MouseButton::Right {
+        let m: menu::MenuButton = app::widget_from_id("pop1").unwrap();
+        m.popup();
+    } else 
     if let Some(path) = f.text(f.value()) {
         let path = PathBuf::from(path);
         if path.exists() {
