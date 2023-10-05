@@ -32,7 +32,7 @@ cargo build --features=fltk/use-wayland --release
 - Add a settings dialog.
 - Save and get user settings using fltk [Preferences](https://docs.rs/fltk/latest/fltk/app/prefs/struct.Preferences.html).
 - Enable using FLTK's FileChooser instead of the system provided one via the settings.
-- Support popup menus via MenuButton with type MenuButtonType::Popup3 on the FileBrowser, editor and terminal.
+- Add more options to FileBrowser popup menu and the terminal menu.
 - Support user provided color schemes for the app and the highlighting.
-- Support regex search and search & replace. 
+- Support regex for search & replace. 
 
