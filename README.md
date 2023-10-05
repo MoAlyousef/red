@@ -34,4 +34,5 @@ cargo build --features=fltk/use-wayland --release
 - Enable using FLTK's FileChooser instead of the system provided one via the settings.
 - Support popup menus via MenuButton with type MenuButtonType::Popup3 on the FileBrowser, editor and terminal.
 - Support user provided color schemes for the app and the highlighting.
+- Support regex search and search & replace. 
 
