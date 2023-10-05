@@ -93,6 +93,7 @@ struct VteParser {
     sbuf: text::TextBuffer,
     temp_s: String,
     temp_b: String,
+    insert_pos: i32,
 }
 
 impl VteParser {
@@ -103,12 +104,16 @@ impl VteParser {
             sbuf,
             temp_s: String::new(),
             temp_b: String::new(),
+            insert_pos: 0,
         }
     }
     pub fn myprint(&mut self) {
         let mut buf = self.st.buffer().unwrap();
+        dbg!(self.insert_pos);
         buf.append(&self.temp_s);
-        self.st.set_insert_position(buf.length());
+        dbg!(buf.length());
+
+        self.st.set_insert_position(self.insert_pos);
         self.st
             .scroll(self.st.count_lines(0, buf.length(), true), 0);
         self.sbuf.append(&self.temp_b);
@@ -123,23 +128,20 @@ impl Perform for VteParser {
         let s = c.encode_utf8(&mut tmp);
         self.temp_s.push_str(s);
         self.temp_b.push(self.ch);
+        self.insert_pos += 1;
     }
 
     fn execute(&mut self, byte: u8) {
         match byte {
             8 => {
                 // backspace
-                let mut buf = self.st.buffer().unwrap();
-                let c = buf.text().chars().last().unwrap();
-                let mut tmp = [0u8; 4];
-                let s = c.encode_utf8(&mut tmp);
-                buf.remove(buf.length() - s.len() as i32, buf.length());
-                self.sbuf.remove(self.sbuf.length() - 1, self.sbuf.length());
+                self.insert_pos -= 1;
             }
             10 | 13 => {
                 // crlf
                 self.temp_s.push(byte as char);
                 self.temp_b.push(self.ch);
+                self.insert_pos += 1;
             }
             0 | 7 => (), // tabs?
             _ => {
@@ -191,6 +193,41 @@ impl Perform for VteParser {
                             //     params, intermediates, ignore, c
                             // );
                             self.ch = 'A';
+                        }
+                    }
+                }
+            }
+            'K' => {
+                for p in params {
+                    match p {
+                        [0] => {
+                            let mut buf = self.st.buffer().unwrap();
+                            let c = buf.text().chars().last().unwrap();
+                            let mut tmp = [0u8; 4];
+                            let s = c.encode_utf8(&mut tmp);
+                            buf.remove(buf.length() - s.len() as i32, buf.length());
+                            self.sbuf.remove(self.sbuf.length() - 1, self.sbuf.length());
+                        }
+                        _ => {
+                            debug!(
+                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+                                params, intermediates, ignore, c
+                            );
+                        }
+                    }
+                }
+            }
+            'C' => {
+                for p in params {
+                    match p {
+                        [0] => {
+                            self.insert_pos += 1;
+                        }
+                        _ => {
+                            debug!(
+                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+                                params, intermediates, ignore, c
+                            );
                         }
                     }
                 }
@@ -280,17 +317,21 @@ impl PPTerm {
             move |t, ev| match ev {
                 Event::KeyDown => {
                     let key = app::event_key();
-                    if key == Key::Up {
-                        writer.lock().unwrap().write_all(UP).unwrap();
-                    } else if key == Key::Down {
-                        writer.lock().unwrap().write_all(DOWN).unwrap();
-                    } else if key == Key::from_char('v')
-                        && app::event_state() == EventState::Ctrl | EventState::Shift
-                    {
-                        app::paste_text2(t);
-                    } else {
-                        let txt = app::event_text();
-                        writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
+                    match key {
+                        Key::Up => writer.lock().unwrap().write_all(UP).unwrap(),
+                        Key::Down => writer.lock().unwrap().write_all(DOWN).unwrap(),
+                        Key::Left => writer.lock().unwrap().write_all(b"\x1b[D").unwrap(),
+                        Key::Right => writer.lock().unwrap().write_all(b"\x1b[C").unwrap(),
+                        _ => {
+                            if app::event_state() == EventState::Ctrl | EventState::Shift {
+                                if key == Key::from_char('v') {
+                                    app::paste_text2(t);
+                                }
+                            } else {
+                                let txt = app::event_text();
+                                writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
+                            }
+                        }
                     }
                     true
                 }
