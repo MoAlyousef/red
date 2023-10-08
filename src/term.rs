@@ -93,6 +93,7 @@ struct VteParser {
     sbuf: text::TextBuffer,
     temp_s: String,
     temp_b: String,
+    insert_pos: i32,
 }
 
 impl VteParser {
@@ -103,15 +104,18 @@ impl VteParser {
             sbuf,
             temp_s: String::new(),
             temp_b: String::new(),
+            insert_pos: 0,
         }
     }
     pub fn myprint(&mut self) {
         let mut buf = self.st.buffer().unwrap();
-        buf.append2(&self.temp_s.as_bytes());
-        self.sbuf.append2(&self.temp_b.as_bytes());
-        self.st.set_insert_position(buf.length());
+        let bytes = &self.temp_s;
+        let sbytes = &self.temp_b;
+        buf.insert(self.insert_pos, &bytes);
+        self.sbuf.insert(self.insert_pos, sbytes);
+        self.st.set_insert_position(self.insert_pos);
         self.st
-            .scroll(self.st.count_lines(0, buf.length(), true), 0);
+            .scroll(self.st.count_lines(0, self.insert_pos, true), 0);
         self.temp_s.clear();
         self.temp_b.clear();
     }
@@ -121,6 +125,7 @@ impl Perform for VteParser {
     fn print(&mut self, c: char) {
         self.temp_s.push(c);
         self.temp_b.push(self.ch);
+        self.insert_pos += 1;
     }
 
     fn execute(&mut self, byte: u8) {
@@ -133,11 +138,13 @@ impl Perform for VteParser {
                 let s = ch.encode_utf8(&mut temp);
                 buf.remove(buf.length() - s.len() as i32, buf.length());
                 self.sbuf.remove(buf.length() - 1, buf.length());
+                self.insert_pos -= 1;
             }
             10 | 13 => {
                 // crlf
                 self.temp_s.push(byte as char);
                 self.temp_b.push(self.ch);
+                self.insert_pos += 1;
             }
             0 | 7 => (), // tabs?
             _ => {
@@ -212,7 +219,7 @@ impl Perform for VteParser {
                 for p in params {
                     match p {
                         [0] => {
-                            // self.insert_pos += 1;
+                            self.insert_pos += 1;
                         }
                         _ => {
                             debug!(
@@ -224,7 +231,23 @@ impl Perform for VteParser {
                 }
             }
             'H' => {
-                // self.insert_pos = 0;
+                debug!(
+                    "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+                    params, intermediates, ignore, c
+                );
+                if params.len() > 1 {
+                    let mut iter = params.iter();
+                    let row = iter.next().unwrap()[0] as i32;
+                    let col = iter.next().unwrap()[0] as i32;
+                    let buf = self.st.buffer().unwrap();
+                    let lines = self.st.count_lines(0, buf.length(), true);
+                    let top_row = lines - 24;
+                    let curr_row = top_row + row;
+                    let line_start = buf.line_start(curr_row);
+                    self.insert_pos = line_start + col;
+                } else {
+                    self.insert_pos = 0;
+                }
             }
             'J' => {
                 for p in params {
@@ -232,6 +255,7 @@ impl Perform for VteParser {
                         [2] => {
                             self.st.buffer().unwrap().set_text("");
                             self.st.style_buffer().unwrap().set_text("");
+                            self.insert_pos = 0;
                         }
                         _ => {
                             debug!(
