@@ -29,6 +29,7 @@ term = [
     "portable-pty",
     "vte"
 ]
+debug-term = []
 
 [profile.release]
 strip = true

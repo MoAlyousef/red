@@ -151,8 +151,7 @@ pub fn fbr_cb(f: &mut browser::FileBrowser) {
     if app::event_mouse_button() == app::MouseButton::Right {
         let m: menu::MenuButton = app::widget_from_id("pop1").unwrap();
         m.popup();
-    } else 
-    if let Some(path) = f.text(f.value()) {
+    } else if let Some(path) = f.text(f.value()) {
         let path = PathBuf::from(path);
         if path.exists() {
             if path.is_dir() {

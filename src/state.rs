@@ -47,7 +47,7 @@ impl State {
             let mybuf = MyBuffer {
                 modified: false,
                 id,
-                buf: ed.buffer().unwrap().clone(),
+                buf: ed.buffer().unwrap(),
                 current_file: current_path.map(|p| p.canonicalize().unwrap()),
             };
             self.map.insert(ed.as_widget_ptr() as usize, mybuf);

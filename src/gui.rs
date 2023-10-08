@@ -36,9 +36,13 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         .with_size(WIDTH, HEIGHT)
         .with_label("RustyEd");
     w.set_xclass("red");
-    let mut fbr_menu = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3).with_id("pop1");
+    let mut fbr_menu = menu::MenuButton::default()
+        .with_type(menu::MenuButtonType::Popup3)
+        .with_id("pop1");
     fbr_menu.add_choice("New File");
-    let mut term_menu = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3).with_id("pop2");
+    let mut term_menu = menu::MenuButton::default()
+        .with_type(menu::MenuButtonType::Popup3)
+        .with_id("pop2");
     term_menu.add_choice("Paste");
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
@@ -51,7 +55,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let mut fbr = browser::FileBrowser::default()
         .with_type(browser::BrowserType::Hold)
         .with_id("fbr");
-    fbr.load(current_path.clone())
+    fbr.load(current_path)
         .expect("Failed to load working directory");
     fbr.set_color(Color::Background.darker());
     if current_file.is_none() {

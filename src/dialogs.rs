@@ -42,7 +42,8 @@ impl FindDialog {
                                 if reg_val {
                                     if let Ok(re) = regex::Regex::new(&val) {
                                         // TODO check v size
-                                        let v: Vec<_> = re.find_iter(&text).map(|m| m.range()).collect();
+                                        let v: Vec<_> =
+                                            re.find_iter(&text).map(|m| m.range()).collect();
                                         let mut idx = idx.borrow_mut();
                                         let curr = &v[*idx];
                                         let mut ed: text::TextEditor = s.current_editor().unwrap();
