@@ -93,6 +93,7 @@ struct VteParser {
     sbuf: text::TextBuffer,
     temp_s: String,
     temp_b: String,
+    backspaces: i32,
 }
 
 impl VteParser {
@@ -103,6 +104,7 @@ impl VteParser {
             sbuf,
             temp_s: String::new(),
             temp_b: String::new(),
+            backspaces: 0,
         }
     }
     pub fn myprint(&mut self) {
@@ -124,6 +126,7 @@ impl Perform for VteParser {
     }
 
     fn execute(&mut self, byte: u8) {
+        dbg!(byte);
         match byte {
             8 => {
                 // backspace
@@ -133,6 +136,7 @@ impl Perform for VteParser {
                 let s = ch.encode_utf8(&mut temp);
                 buf.remove(buf.length() - s.len() as i32, buf.length());
                 self.sbuf.remove(buf.length() - 1, buf.length());
+                self.backspaces = 0;
             }
             10 | 13 => {
                 // crlf
@@ -169,6 +173,10 @@ impl Perform for VteParser {
     }
 
     fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: char) {
+        debug!(
+            "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
+            params, intermediates, ignore, c
+        );
         match c {
             'm' => {
                 for p in params {
@@ -184,10 +192,6 @@ impl Perform for VteParser {
                         [39] => self.ch = 'J',
                         [0] => self.ch = 'A',
                         _ => {
-                            debug!(
-                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
-                                params, intermediates, ignore, c
-                            );
                             self.ch = 'A';
                         }
                     }
@@ -200,10 +204,6 @@ impl Perform for VteParser {
                             // erase from cursor to end of line
                         }
                         _ => {
-                            debug!(
-                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
-                                params, intermediates, ignore, c
-                            );
                         }
                     }
                 }
@@ -213,10 +213,6 @@ impl Perform for VteParser {
                     match p {
                         [0] => {}
                         _ => {
-                            debug!(
-                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
-                                params, intermediates, ignore, c
-                            );
                         }
                     }
                 }
@@ -237,19 +233,11 @@ impl Perform for VteParser {
                             self.st.style_buffer().unwrap().set_text("");
                         }
                         _ => {
-                            debug!(
-                                "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
-                                params, intermediates, ignore, c
-                            );
                         }
                     }
                 }
             }
             _ => {
-                debug!(
-                    "[csi_dispatch] params={:#?} intermediates={:?}, ignore={:?}, char={}",
-                    params, intermediates, ignore, c
-                );
             }
         }
     }
@@ -331,6 +319,8 @@ impl PPTerm {
                 Event::KeyDown => {
                     let key = app::event_key();
                     match key {
+                        #[cfg(windows)]
+                        Key::BackSpace => writer.lock().unwrap().write_all(b"\x7f").unwrap(),
                         Key::Up => writer.lock().unwrap().write_all(UP).unwrap(),
                         Key::Down => writer.lock().unwrap().write_all(DOWN).unwrap(),
                         Key::Left => writer.lock().unwrap().write_all(b"\x1b[D").unwrap(),
