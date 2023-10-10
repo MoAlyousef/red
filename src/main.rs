@@ -2,6 +2,7 @@ use std::env;
 
 mod cbs;
 mod dialogs;
+mod fbr;
 mod gui;
 mod state;
 mod utils;

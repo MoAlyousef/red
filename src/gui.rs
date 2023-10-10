@@ -1,4 +1,4 @@
-use crate::{cbs, dialogs, utils};
+use crate::{cbs, dialogs, fbr, utils};
 use fltk::{enums::*, prelude::*, *};
 use fltk_theme::{SchemeType, WidgetScheme};
 use std::path::{Path, PathBuf};
@@ -36,14 +36,6 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         .with_size(WIDTH, HEIGHT)
         .with_label("RustyEd");
     w.set_xclass("red");
-    let mut fbr_menu = menu::MenuButton::default()
-        .with_type(menu::MenuButtonType::Popup3)
-        .with_id("pop1");
-    fbr_menu.add_choice("New File");
-    let mut term_menu = menu::MenuButton::default()
-        .with_type(menu::MenuButtonType::Popup3)
-        .with_id("pop2");
-    term_menu.add_choice("Paste");
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
     let mut m = menu::SysMenuBar::default().with_id("menu");
@@ -52,18 +44,12 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     col0.fixed(&m, MENU_HEIGHT);
     let mut row = group::Flex::default();
     row.set_pad(0);
-    let mut fbr = browser::FileBrowser::default()
-        .with_type(browser::BrowserType::Hold)
-        .with_id("fbr");
-    fbr.load(current_path)
-        .expect("Failed to load working directory");
-    fbr.set_color(Color::Background.darker());
+    let fbr = fbr::Fbr::new(current_path);
     if current_file.is_none() {
-        row.fixed(&fbr, 180);
+        row.fixed(&*fbr, 180);
     } else {
-        row.fixed(&fbr, 1);
+        row.fixed(&*fbr, 1);
     }
-    fbr.resize_callback(move |_, x, y, w, h| fbr_menu.resize(x, y, w, h));
     let mut fbr_splitter = frame::Frame::default();
     fbr_splitter.handle(cbs::fbr_splitter_cb);
     row.fixed(&fbr_splitter, 4);
@@ -78,8 +64,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
         col.fixed(&tab_splitter, 4);
-        let mut term = term::PPTerm::new();
-        term.resize_callback(move |_, x, y, w, h| term_menu.resize(x, y, w, h));
+        let term = term::PPTerm::new();
         col.fixed(&*term, 160);
     }
     col.end();
@@ -99,7 +84,6 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     w.show();
 
     // callbacks
-    fbr.set_callback(cbs::fbr_cb);
     w.set_callback(cbs::win_cb);
     a
 }

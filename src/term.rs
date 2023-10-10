@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(clippy::single_match)]
 
 use fltk::{enums::*, prelude::*, *};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
@@ -126,7 +127,7 @@ impl Perform for VteParser {
     }
 
     fn execute(&mut self, byte: u8) {
-        dbg!(byte);
+        debug!(byte);
         match byte {
             8 => {
                 // backspace
@@ -203,8 +204,7 @@ impl Perform for VteParser {
                         [0] => {
                             // erase from cursor to end of line
                         }
-                        _ => {
-                        }
+                        _ => {}
                     }
                 }
             }
@@ -212,8 +212,7 @@ impl Perform for VteParser {
                 for p in params {
                     match p {
                         [0] => {}
-                        _ => {
-                        }
+                        _ => {}
                     }
                 }
             }
@@ -232,13 +231,11 @@ impl Perform for VteParser {
                             self.st.buffer().unwrap().set_text("");
                             self.st.style_buffer().unwrap().set_text("");
                         }
-                        _ => {
-                        }
+                        _ => {}
                     }
                 }
             }
-            _ => {
-            }
+            _ => {}
         }
     }
 
@@ -250,14 +247,54 @@ impl Perform for VteParser {
     }
 }
 
+pub fn menu_cb(m: &mut impl MenuExt) {
+    let term: text::TextDisplay = app::widget_from_id("term").unwrap();
+    if let Ok(mpath) = m.item_pathname(None) {
+        match mpath.as_str() {
+            "Copy\t" => app::copy2(&term.buffer().unwrap().selection_text()),
+            "Paste\t" => app::paste_text2(&term),
+            _ => (),
+        }
+    }
+}
+
+pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
+    m.add(
+        "Copy\t",
+        Shortcut::Ctrl | Key::Insert,
+        menu::MenuFlag::Normal,
+        menu_cb,
+    );
+    m.add(
+        "Paste\t",
+        Shortcut::Shift | Key::Insert,
+        menu::MenuFlag::Normal,
+        menu_cb,
+    );
+}
+
 pub struct PPTerm {
+    g: group::Group,
     st: text::TextDisplay,
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
 }
 
 impl PPTerm {
     pub fn new() -> Self {
+        let mut g = group::Group::default().with_id("term_group");
         let mut st = text::TextDisplay::default().with_id("term");
+        let mut m = menu::MenuButton::default()
+            .with_type(menu::MenuButtonType::Popup3)
+            .with_id("pop2");
+        init_menu(&mut m);
+        g.end();
+        g.resize_callback({
+            let mut st = st.clone();
+            move |_, x, y, w, h| {
+                m.resize(x, y, w, h);
+                st.resize(x, y, w, h);
+            }
+        });
         st.show_cursor(true);
         st.set_color(Color::Black);
         st.set_cursor_style(text::Cursor::Block);
@@ -343,19 +380,11 @@ impl PPTerm {
                     writer.lock().unwrap().write_all(txt.as_bytes()).unwrap();
                     true
                 }
-                Event::Push => {
-                    if app::event_mouse_button() == app::MouseButton::Right {
-                        if let Some(term_menu) = app::widget_from_id::<menu::MenuButton>("pop2") {
-                            term_menu.popup();
-                        }
-                    }
-                    true
-                }
                 _ => false,
             }
         });
 
-        Self { st, writer }
+        Self { g, st, writer }
     }
 
     pub fn write_all(&self, s: &[u8]) -> Result<(), io::Error> {
@@ -363,4 +392,4 @@ impl PPTerm {
     }
 }
 
-fltk::widget_extends!(PPTerm, text::TextDisplay, st);
+fltk::widget_extends!(PPTerm, group::Group, g);

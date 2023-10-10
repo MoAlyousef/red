@@ -1,7 +1,6 @@
 use crate::state::STATE;
-use crate::utils;
 use fltk::{enums::*, prelude::*, *};
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
     let mut nfc = dialog::NativeFileChooser::new(mode);
@@ -147,47 +146,6 @@ pub fn menu_cb(m: &mut impl MenuExt) {
     }
 }
 
-pub fn fbr_cb(f: &mut browser::FileBrowser) {
-    if app::event_mouse_button() == app::MouseButton::Right {
-        let m: menu::MenuButton = app::widget_from_id("pop1").unwrap();
-        m.popup();
-    } else if let Some(path) = f.text(f.value()) {
-        let path = PathBuf::from(path);
-        if path.exists() {
-            if path.is_dir() {
-                f.load(path.clone()).expect("Couldn't load directory!");
-                let cwd = env::current_dir().unwrap();
-                env::set_current_dir(cwd.join(path)).unwrap();
-                let mut info: frame::Frame = app::widget_from_id("info").unwrap();
-                info.set_label(&format!(
-                    "Directory: {}",
-                    utils::strip_unc_path(&env::current_dir().unwrap())
-                ));
-                f.set_damage(true);
-            } else {
-                let mut is_image = false;
-                if let Some(ext) = path.extension() {
-                    match ext.to_str().unwrap() {
-                        "jpg" | "gif" | "png" | "bmp" => is_image = true,
-                        _ => (),
-                    }
-                }
-                if is_image {
-                    let img = image::SharedImage::load(path).unwrap();
-                    let mut win: window::Window = app::widget_from_id("image_dialog").unwrap();
-                    win.resize(win.x(), win.y(), img.w(), img.h());
-                    win.child(0).unwrap().set_image(Some(img));
-                    win.show();
-                } else {
-                    STATE.with(move |s| {
-                        s.append(Some(path.canonicalize().unwrap()));
-                    });
-                }
-            }
-        }
-    }
-}
-
 pub fn tab_close_cb(g: &mut impl GroupExt) {
     if app::callback_reason() == CallbackReason::Closed {
         let ed: text::TextEditor = unsafe { g.child(0).unwrap().into_widget() };
@@ -206,7 +164,7 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
 #[cfg(feature = "term")]
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
-    let term = app::widget_from_id::<text::TextDisplay>("term").unwrap();
+    let term = app::widget_from_id::<group::Group>("term_group").unwrap();
     match ev {
         Event::Push => true,
         Event::Drag => {
@@ -228,7 +186,7 @@ pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
 
 pub fn fbr_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
-    let fbr: browser::FileBrowser = app::widget_from_id("fbr").unwrap();
+    let fbr: group::Group = app::widget_from_id("fbr_group").unwrap();
     match ev {
         Event::Push => true,
         Event::Drag => {
