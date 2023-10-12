@@ -69,8 +69,7 @@ pub struct Fbr {
 
 impl Fbr {
     pub fn new(current_path: &Path) -> Self {
-        let mut g = group::Group::default()
-            .with_id("fbr_group");
+        let mut g = group::Group::default().with_id("fbr_group");
         let mut fbr = browser::FileBrowser::default()
             .with_type(browser::BrowserType::Hold)
             .with_id("fbr");

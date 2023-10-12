@@ -32,10 +32,14 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let _replace_dialog = dialogs::ReplaceDialog::new();
     let _image_dialog = dialogs::ImageDialog::new();
 
+    let mut popup = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3);
+    init_edit_menu(&mut popup);
+
     let mut w = window::Window::default()
         .with_size(WIDTH, HEIGHT)
         .with_label("RustyEd");
     w.set_xclass("red");
+
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
     let mut m = menu::SysMenuBar::default().with_id("menu");
@@ -56,6 +60,17 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let mut col = group::Flex::default().column();
     col.set_pad(0);
     let mut tabs = group::Tabs::default().with_id("tabs");
+    tabs.handle(move |t, ev| match ev {
+        Event::Push => {
+            if app::event_mouse_button() == app::MouseButton::Right && app::event_y() > t.y() + 30 {
+                popup.popup();
+                true
+            } else {
+                false
+            }
+        }
+        _ => false,
+    });
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
@@ -88,44 +103,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     a
 }
 
-pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
-    m.add(
-        "&File/New...\t",
-        Shortcut::Ctrl | 'n',
-        menu::MenuFlag::Normal,
-        cbs::menu_cb,
-    );
-    m.add(
-        "&File/Open...\t",
-        Shortcut::Ctrl | 'o',
-        menu::MenuFlag::Normal,
-        cbs::menu_cb,
-    );
-    m.add(
-        "&File/Save\t",
-        Shortcut::Ctrl | 's',
-        menu::MenuFlag::Normal,
-        cbs::menu_cb,
-    );
-    m.add(
-        "&File/Save as...\t",
-        Shortcut::Ctrl | 'w',
-        menu::MenuFlag::Normal,
-        cbs::menu_cb,
-    );
-    m.add(
-        "&File/Save All\t",
-        Shortcut::Ctrl | 'w',
-        menu::MenuFlag::MenuDivider,
-        cbs::menu_cb,
-    );
-    let idx = m.add(
-        "&File/Quit\t",
-        Shortcut::Ctrl | 'q',
-        menu::MenuFlag::Normal,
-        cbs::menu_cb,
-    );
-    m.at(idx).unwrap().set_label_color(Color::Red);
+pub fn init_edit_menu(m: &mut (impl MenuExt + 'static)) {
     m.add(
         "&Edit/Undo\t",
         Shortcut::Ctrl | 'z',
@@ -168,6 +146,46 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
+}
+pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
+    m.add(
+        "&File/New...\t",
+        Shortcut::Ctrl | 'n',
+        menu::MenuFlag::Normal,
+        cbs::menu_cb,
+    );
+    m.add(
+        "&File/Open...\t",
+        Shortcut::Ctrl | 'o',
+        menu::MenuFlag::Normal,
+        cbs::menu_cb,
+    );
+    m.add(
+        "&File/Save\t",
+        Shortcut::Ctrl | 's',
+        menu::MenuFlag::Normal,
+        cbs::menu_cb,
+    );
+    m.add(
+        "&File/Save as...\t",
+        Shortcut::Ctrl | 'w',
+        menu::MenuFlag::Normal,
+        cbs::menu_cb,
+    );
+    m.add(
+        "&File/Save All\t",
+        Shortcut::Ctrl | 'w',
+        menu::MenuFlag::MenuDivider,
+        cbs::menu_cb,
+    );
+    let idx = m.add(
+        "&File/Quit\t",
+        Shortcut::Ctrl | 'q',
+        menu::MenuFlag::Normal,
+        cbs::menu_cb,
+    );
+    m.at(idx).unwrap().set_label_color(Color::Red);
+    init_edit_menu(m);
     let idx = m.add(
         "&View/File browser\t",
         Shortcut::Ctrl | 'f',
