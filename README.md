@@ -25,7 +25,7 @@ cargo build --features=fltk/use-wayland --release
 
 ## Known issues
 - On Windows, the terminal defaults to cmd. More ansi escape sequences need to be handled to support powershell. 
-- If you're running linux and no icons appear in the FileBrowser, you probably need to install icon files or upgrade your system, which I had to on kubuntu 20.04.
+- If you're running KDE and no icons appear in the FileBrowser, you can try setting the KDEDIR to /usr/local.
 - Highlighting via tree-sitter seems to vary between different language modules. tree-sitter-json seems quite limited for example.
 
 ## ToDo

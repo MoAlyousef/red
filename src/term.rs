@@ -127,7 +127,7 @@ impl Perform for VteParser {
     }
 
     fn execute(&mut self, byte: u8) {
-        debug!(byte);
+        debug!("{}", byte);
         match byte {
             8 => {
                 // backspace
