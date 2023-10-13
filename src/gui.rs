@@ -14,9 +14,9 @@ const HEIGHT: i32 = 600;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App {
-    let a = app::App::default();
-    let widget_scheme = WidgetScheme::new(SchemeType::Gleam);
-    widget_scheme.apply();
+    let a = app::App::default().with_scheme(app::Scheme::Gtk);
+    // let widget_scheme = WidgetScheme::new(SchemeType::Gleam);
+    // widget_scheme.apply();
     app::set_menu_linespacing(10);
     app::set_background_color(0x21, 0x25, 0x2b);
     app::set_background2_color(0x28, 0x2c, 0x34);
@@ -33,7 +33,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let _image_dialog = dialogs::ImageDialog::new();
 
     let mut popup = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3);
-    init_edit_menu(&mut popup);
+    init_edit_menu(&mut popup, "");
 
     let mut w = window::Window::default()
         .with_size(WIDTH, HEIGHT)
@@ -103,45 +103,45 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     a
 }
 
-pub fn init_edit_menu(m: &mut (impl MenuExt + 'static)) {
+pub fn init_edit_menu(m: &mut (impl MenuExt + 'static), header: &str) {
     m.add(
-        "&Edit/Undo\t",
+        &format!("{}Undo\t", header),
         Shortcut::Ctrl | 'z',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
     m.add(
-        "&Edit/Redo\t",
+        &format!("{}Redo\t", header),
         Shortcut::Ctrl | 'y',
         menu::MenuFlag::MenuDivider,
         cbs::menu_cb,
     );
     m.add(
-        "&Edit/Cut\t",
+        &format!("{}Cut\t", header),
         Shortcut::Ctrl | 'x',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
     m.add(
-        "&Edit/Copy\t",
+        &format!("{}Copy\t", header),
         Shortcut::Ctrl | 'c',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
     m.add(
-        "&Edit/Paste\t",
+        &format!("{}Paste\t", header),
         Shortcut::Ctrl | 'v',
         menu::MenuFlag::MenuDivider,
         cbs::menu_cb,
     );
     m.add(
-        "&Edit/Find\t",
+        &format!("{}Find\t", header),
         Shortcut::Ctrl | 'f',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
     m.add(
-        "&Edit/Replace\t",
+        &format!("{}Replace\t", header),
         Shortcut::Ctrl | 'h',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
@@ -149,8 +149,14 @@ pub fn init_edit_menu(m: &mut (impl MenuExt + 'static)) {
 }
 pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     m.add(
-        "&File/New...\t",
+        "&File/New File...\t",
         Shortcut::Ctrl | 'n',
+        menu::MenuFlag::Normal,
+        cbs::menu_cb,
+    );
+    m.add(
+        "&File/New Dir...\t",
+        Shortcut::Ctrl | Shortcut::Shift | 'n',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
@@ -168,13 +174,13 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     );
     m.add(
         "&File/Save as...\t",
-        Shortcut::Ctrl | 'w',
+        Shortcut::Ctrl | Shortcut::Shift | 'w',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
     m.add(
         "&File/Save All\t",
-        Shortcut::Ctrl | 'w',
+        Shortcut::None,
         menu::MenuFlag::MenuDivider,
         cbs::menu_cb,
     );
@@ -185,10 +191,10 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
         cbs::menu_cb,
     );
     m.at(idx).unwrap().set_label_color(Color::Red);
-    init_edit_menu(m);
+    init_edit_menu(m, "&Edit/");
     let idx = m.add(
         "&View/File browser\t",
-        Shortcut::Ctrl | 'f',
+        Shortcut::None,
         menu::MenuFlag::Toggle,
         cbs::menu_cb,
     );
@@ -199,7 +205,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     {
         let idx = m.add(
             "&View/Terminal\t",
-            Shortcut::Ctrl | 'h',
+            Shortcut::None,
             menu::MenuFlag::Toggle,
             cbs::menu_cb,
         );

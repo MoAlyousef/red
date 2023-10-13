@@ -32,13 +32,28 @@ pub fn editor_cb(_e: &mut text::TextEditor) {
     app::add_timeout3(0.01, |_| STATE.with(|s| s.was_modified(true)));
 }
 
+pub fn new_file() {
+    let dlg = dialog::input_default("Enter file name", "");
+    if let Some(f) = dlg {
+        fs::File::create(&f).ok();
+    }
+}
+
+pub fn new_dir() {
+    let dlg = dialog::input_default("Enter directory name", "");
+    if let Some(f) = dlg {
+        fs::create_dir(&f).ok();
+    }
+}
+
 pub fn menu_cb(m: &mut impl MenuExt) {
     if let Ok(mpath) = m.item_pathname(None) {
         match mpath.as_str() {
-            "&File/New...\t" => {
-                STATE.with(|s| {
-                    s.append(None);
-                });
+            "&File/New File...\t" => {
+                new_file();
+            }
+            "&File/New Dir...\t" => {
+                new_dir();
             }
             "&File/Open...\t" => {
                 let c = nfc_get_file(dialog::NativeFileChooserType::BrowseFile);
@@ -113,7 +128,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             "&Edit/Replace\t" => replace(),
             "&View/File browser\t" => {
                 let mut item = m.at(m.value()).unwrap();
-                let fbr: browser::FileBrowser = app::widget_from_id("fbr").unwrap();
+                let fbr: group::Group = app::widget_from_id("fbr_group").unwrap();
                 let mut parent: group::Flex = unsafe { fbr.parent().unwrap().into_widget() };
                 if !item.value() {
                     parent.fixed(&fbr, 1);
@@ -126,7 +141,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&View/Terminal\t" => {
                 let mut item = m.at(m.value()).unwrap();
-                let term: text::TextDisplay = app::widget_from_id("term").unwrap();
+                let term: group::Group = app::widget_from_id("term_group").unwrap();
                 let mut parent: group::Flex = unsafe { term.parent().unwrap().into_widget() };
                 if !item.value() {
                     parent.fixed(&term, 1);

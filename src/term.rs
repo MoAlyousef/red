@@ -94,7 +94,6 @@ struct VteParser {
     sbuf: text::TextBuffer,
     temp_s: String,
     temp_b: String,
-    backspaces: i32,
 }
 
 impl VteParser {
@@ -105,7 +104,6 @@ impl VteParser {
             sbuf,
             temp_s: String::new(),
             temp_b: String::new(),
-            backspaces: 0,
         }
     }
     pub fn myprint(&mut self) {
@@ -137,7 +135,6 @@ impl Perform for VteParser {
                 let s = ch.encode_utf8(&mut temp);
                 buf.remove(buf.length() - s.len() as i32, buf.length());
                 self.sbuf.remove(buf.length() - 1, buf.length());
-                self.backspaces = 0;
             }
             10 | 13 => {
                 // crlf
@@ -360,8 +357,8 @@ impl PPTerm {
                         Key::BackSpace => writer.lock().unwrap().write_all(b"\x7f").unwrap(),
                         Key::Up => writer.lock().unwrap().write_all(UP).unwrap(),
                         Key::Down => writer.lock().unwrap().write_all(DOWN).unwrap(),
-                        Key::Left => writer.lock().unwrap().write_all(b"\x1b[D").unwrap(),
-                        Key::Right => writer.lock().unwrap().write_all(b"\x1b[C").unwrap(),
+                        // Key::Left => writer.lock().unwrap().write_all(b"\x1b[D").unwrap(),
+                        // Key::Right => writer.lock().unwrap().write_all(b"\x1b[C").unwrap(),
                         _ => {
                             if app::event_state() == EventState::Ctrl | EventState::Shift {
                                 if key == Key::from_char('v') {

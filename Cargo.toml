@@ -7,6 +7,7 @@ edition = "2021"
 fltk = "1.4.13"
 fltk-theme = "0.7"
 regex = "1.9.6"
+notify = "5.1"
 # optional deps
 # term
 portable-pty = { version = "0.8", optional = true }
