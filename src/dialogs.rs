@@ -32,6 +32,8 @@ impl FindDialog {
                 if reg_val && regex::Regex::new(&val).is_err() {
                     i.set_text_color(enums::Color::Red);
                     return;
+                } else {
+                    i.set_text_color(enums::Color::Foreground);
                 }
                 if !val.is_empty() {
                     STATE.with({
@@ -41,30 +43,36 @@ impl FindDialog {
                                 let text = buf.text();
                                 if reg_val {
                                     if let Ok(re) = regex::Regex::new(&val) {
-                                        // TODO check v size
                                         let v: Vec<_> =
                                             re.find_iter(&text).map(|m| m.range()).collect();
+                                        if !v.is_empty() {
+                                            let mut idx = idx.borrow_mut();
+                                            let curr = &v[*idx];
+                                            let mut ed: text::TextEditor =
+                                                s.current_editor().unwrap();
+                                            buf.select(curr.start as i32, curr.end as i32);
+                                            ed.scroll(
+                                                ed.count_lines(0, curr.start as i32, true),
+                                                0,
+                                            );
+                                            *idx += 1;
+                                            if *idx == v.len() {
+                                                *idx = 0;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    let v: Vec<_> = text.match_indices(&val).collect();
+                                    if !v.is_empty() {
                                         let mut idx = idx.borrow_mut();
-                                        let curr = &v[*idx];
+                                        let curr = v[*idx];
                                         let mut ed: text::TextEditor = s.current_editor().unwrap();
-                                        buf.select(curr.start as i32, curr.end as i32);
-                                        ed.scroll(ed.count_lines(0, curr.start as i32, true), 0);
+                                        buf.select(curr.0 as i32, (curr.0 + val.len()) as i32);
+                                        ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
                                         *idx += 1;
                                         if *idx == v.len() {
                                             *idx = 0;
                                         }
-                                    }
-                                } else {
-                                    // TODO check v size
-                                    let v: Vec<_> = text.match_indices(&val).collect();
-                                    let mut idx = idx.borrow_mut();
-                                    let curr = v[*idx];
-                                    let mut ed: text::TextEditor = s.current_editor().unwrap();
-                                    buf.select(curr.0 as i32, (curr.0 + val.len()) as i32);
-                                    ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
-                                    *idx += 1;
-                                    if *idx == v.len() {
-                                        *idx = 0;
                                     }
                                 }
                             }
@@ -105,33 +113,60 @@ impl ReplaceDialog {
         let mut row = group::Flex::default();
         let f = frame::Frame::default().with_label("Search:");
         row.fixed(&f, 60);
-        let search = input::Input::default();
-        let f = frame::Frame::default();
-        row.fixed(&f, 60);
+        let mut search = input::Input::default();
+        search.set_trigger(enums::CallbackTrigger::Changed);
+        let mut reg = button::ToggleButton::default().with_label(".*");
+        reg.set_selection_color(reg.color().lighter());
+        reg.set_tooltip("Use regex");
+        row.fixed(&reg, 30);
         row.end();
         let mut row = group::Flex::default();
         let f = frame::Frame::default().with_label("Replace:");
         row.fixed(&f, 60);
         let replace = input::Input::default();
-        let mut b = button::Button::default().with_label("Apply!");
+        let mut b = button::Button::default().with_label("@>");
+        b.set_tooltip("Apply");
+        row.fixed(&b, 30);
+        row.end();
+        col.end();
+        win.end();
+        search.set_callback({
+            let reg = reg.clone();
+            move |i| {
+                let val = i.value();
+                let reg_val = reg.value();
+                if reg_val && regex::Regex::new(&val).is_err() {
+                    i.set_text_color(enums::Color::Red);
+                } else {
+                    i.set_text_color(enums::Color::Foreground);
+                }
+            }
+        });
         b.set_callback(move |_| {
             let search = search.value();
             let replace = replace.value();
+            let reg_val = reg.value();
+            if reg_val && regex::Regex::new(&search).is_err() {
+                return;
+            }
             STATE.with({
                 move |s| {
                     if let Some(buf) = s.buf().as_mut() {
                         let text = buf.text();
-                        let ntext = text.replace(&search, &replace);
-                        buf.set_text(&ntext);
+                        if reg_val {
+                            if let Ok(re) = regex::Regex::new(&search) {
+                                let ntext = re.replace(&text, &replace);
+                                buf.set_text(&ntext);
+                            }
+                        } else {
+                            let ntext = text.replace(&search, &replace);
+                            buf.set_text(&ntext);
+                        }
                         s.was_modified(true);
                     }
                 }
             });
         });
-        row.fixed(&b, 60);
-        row.end();
-        col.end();
-        win.end();
         win.handle(|win, ev| match ev {
             enums::Event::Hide => {
                 win.hide();

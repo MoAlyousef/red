@@ -22,7 +22,6 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     app::set_background2_color(0x28, 0x2c, 0x34);
     app::set_foreground_color(0xab, 0xb2, 0xa2);
     app::set_color(Color::Selection, 0x32, 0x38, 0x42);
-    // todo
     app::set_color(Color::Inactive, 88, 0, 0);
 
     let mut buf = text::TextBuffer::default();
@@ -60,17 +59,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let mut col = group::Flex::default().column();
     col.set_pad(0);
     let mut tabs = group::Tabs::default().with_id("tabs");
-    tabs.handle(move |t, ev| match ev {
-        Event::Push => {
-            if app::event_mouse_button() == app::MouseButton::Right && app::event_y() > t.y() + 30 {
-                popup.popup();
-                true
-            } else {
-                false
-            }
-        }
-        _ => false,
-    });
+    tabs.handle(move |t, ev| tabs_handle(t, ev, &mut popup));
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
@@ -97,10 +86,22 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     w.end();
     w.make_resizable(true);
     w.show();
-
-    // callbacks
     w.set_callback(cbs::win_cb);
     a
+}
+
+pub fn tabs_handle(t: &mut group::Tabs, ev: Event, popup: &mut menu::MenuButton) -> bool {
+    match ev {
+        Event::Push => {
+            if app::event_mouse_button() == app::MouseButton::Right && app::event_y() > t.y() + 30 {
+                popup.popup();
+                true
+            } else {
+                false
+            }
+        }
+        _ => false,
+    }
 }
 
 pub fn init_edit_menu(m: &mut (impl MenuExt + 'static), header: &str) {
