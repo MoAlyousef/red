@@ -14,9 +14,9 @@ const HEIGHT: i32 = 600;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App {
-    let a = app::App::default().with_scheme(app::Scheme::Gtk);
-    // let widget_scheme = WidgetScheme::new(SchemeType::Gleam);
-    // widget_scheme.apply();
+    let a = app::App::default()/*.with_scheme(app::Scheme::Gtk)*/;
+    let widget_scheme = WidgetScheme::new(SchemeType::Clean);
+    widget_scheme.apply();
     app::set_menu_linespacing(10);
     app::set_background_color(0x21, 0x25, 0x2b);
     app::set_background2_color(0x28, 0x2c, 0x34);

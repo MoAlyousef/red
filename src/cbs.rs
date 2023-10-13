@@ -35,14 +35,14 @@ pub fn editor_cb(_e: &mut text::TextEditor) {
 pub fn new_file() {
     let dlg = dialog::input_default("Enter file name", "");
     if let Some(f) = dlg {
-        fs::File::create(&f).ok();
+        fs::File::create(f).ok();
     }
 }
 
 pub fn new_dir() {
     let dlg = dialog::input_default("Enter directory name", "");
     if let Some(f) = dlg {
-        fs::create_dir(&f).ok();
+        fs::create_dir(f).ok();
     }
 }
 
@@ -129,7 +129,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             "&View/File browser\t" => {
                 let mut item = m.at(m.value()).unwrap();
                 let fbr: group::Group = app::widget_from_id("fbr_group").unwrap();
-                let mut parent: group::Flex = unsafe { fbr.parent().unwrap().into_widget() };
+                let mut parent = group::Flex::from_dyn_widget(&fbr.parent().unwrap()).unwrap();
                 if !item.value() {
                     parent.fixed(&fbr, 1);
                     item.clear();
@@ -142,7 +142,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             "&View/Terminal\t" => {
                 let mut item = m.at(m.value()).unwrap();
                 let term: group::Group = app::widget_from_id("term_group").unwrap();
-                let mut parent: group::Flex = unsafe { term.parent().unwrap().into_widget() };
+                let mut parent = group::Flex::from_dyn_widget(&term.parent().unwrap()).unwrap();
                 if !item.value() {
                     parent.fixed(&term, 1);
                     item.clear();
@@ -163,7 +163,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
 
 pub fn tab_close_cb(g: &mut impl GroupExt) {
     if app::callback_reason() == CallbackReason::Closed {
-        let ed: text::TextEditor = unsafe { g.child(0).unwrap().into_widget() };
+        let ed = text::TextEditor::from_dyn_widget(&g.child(0).unwrap()).unwrap();
         let edid = ed.as_widget_ptr() as usize;
         let buf = ed.buffer().unwrap();
         let mut parent = g.parent().unwrap();
@@ -178,7 +178,7 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
 
 #[cfg(feature = "term")]
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
-    let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
+    let mut parent = group::Flex::from_dyn_widget(&f.parent().unwrap()).unwrap();
     let term = app::widget_from_id::<group::Group>("term_group").unwrap();
     match ev {
         Event::Push => true,
@@ -200,7 +200,7 @@ pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
 }
 
 pub fn fbr_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
-    let mut parent: group::Flex = unsafe { f.parent().unwrap().into_widget() };
+    let mut parent = group::Flex::from_dyn_widget(&f.parent().unwrap()).unwrap();
     let fbr: group::Group = app::widget_from_id("fbr_group").unwrap();
     match ev {
         Event::Push => true,

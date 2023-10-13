@@ -52,15 +52,14 @@ impl State {
             };
             self.map.insert(ed.as_widget_ptr() as usize, mybuf);
         } else {
-            unsafe {
-                tabs.set_value(
-                    &text::TextEditor::from_widget_ptr(edid as *mut _)
-                        .parent()
-                        .unwrap(),
-                )
-                .ok();
-                tabs.set_damage(true);
-            }
+            tabs.set_value(
+                &text::TextEditor::from_dyn_widget_ptr(edid as *mut _)
+                    .unwrap()
+                    .parent()
+                    .unwrap(),
+            )
+            .ok();
+            tabs.set_damage(true);
         }
     }
     pub fn current_id(&self) -> Option<usize> {
@@ -131,7 +130,7 @@ impl State {
         tabs.value()
             .unwrap()
             .child(0)
-            .map(|c| unsafe { c.into_widget() })
+            .map(|c| text::TextEditor::from_dyn_widget(&c).unwrap())
     }
 }
 
