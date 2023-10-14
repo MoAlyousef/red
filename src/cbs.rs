@@ -99,33 +99,33 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                 });
             }
             "&File/Quit\t" => app::quit(),
-            "&Edit/Undo\t" => STATE.with(|s| {
+            "/Undo\t" | "&Edit/Undo\t" => STATE.with(|s| {
                 if let Some(e) = s.current_editor() {
                     e.undo()
                 }
             }),
-            "&Edit/Redo\t" => STATE.with(|s| {
+            "/Redo\t" | "&Edit/Redo\t" => STATE.with(|s| {
                 if let Some(e) = s.current_editor() {
                     e.redo()
                 }
             }),
-            "&Edit/Cut\t" => STATE.with(|s| {
+            "/Cut\t" | "&Edit/Cut\t" => STATE.with(|s| {
                 if let Some(e) = s.current_editor() {
                     e.cut()
                 }
             }),
-            "&Edit/Copy\t" => STATE.with(|s| {
+            "/Copy\t" | "&Edit/Copy\t" => STATE.with(|s| {
                 if let Some(e) = s.current_editor() {
                     e.copy()
                 }
             }),
-            "&Edit/Paste\t" => STATE.with(|s| {
+            "/Paste\t" | "&Edit/Paste\t" => STATE.with(|s| {
                 if let Some(e) = s.current_editor() {
                     e.paste()
                 }
             }),
-            "&Edit/Find\t" => find(),
-            "&Edit/Replace\t" => replace(),
+            "/Find\t" | "&Edit/Find\t" => find(),
+            "/Replace\t" | "&Edit/Replace\t" => replace(),
             "&View/File browser\t" => {
                 let mut item = m.at(m.value()).unwrap();
                 let fbr: group::Group = app::widget_from_id("fbr_group").unwrap();

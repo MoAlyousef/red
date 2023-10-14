@@ -11,8 +11,8 @@ use std::{
 pub fn menu_cb(m: &mut impl MenuExt) {
     if let Ok(mpath) = m.item_pathname(None) {
         match mpath.as_str() {
-            "New File...\t" => cbs::new_file(),
-            "New Dir...\t" => cbs::new_dir(),
+            "/New File...\t" => cbs::new_file(),
+            "/New Dir...\t" => cbs::new_dir(),
             _ => (),
         }
     }
