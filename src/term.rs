@@ -6,7 +6,7 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::{
     env,
     io::{self, Read, Write},
-    mem, str,
+    str,
     sync::{Arc, Mutex},
     thread,
 };
@@ -130,11 +130,12 @@ impl Perform for VteParser {
             8 => {
                 // backspace
                 let mut buf = self.st.buffer().unwrap();
-                let ch = buf.text().chars().last().unwrap();
-                let mut temp = [0u8; 4];
-                let s = ch.encode_utf8(&mut temp);
-                buf.remove(buf.length() - s.len() as i32, buf.length());
-                self.sbuf.remove(buf.length() - 1, buf.length());
+                if let Some(ch) = buf.text().chars().last() {
+                    let mut temp = [0u8; 4];
+                    let s = ch.encode_utf8(&mut temp);
+                    buf.remove(buf.length() - s.len() as i32, buf.length());
+                    self.sbuf.remove(buf.length() - 1, buf.length());
+                }
             }
             10 | 13 => {
                 // crlf
@@ -142,9 +143,7 @@ impl Perform for VteParser {
                 self.temp_b.push(self.ch);
             }
             0 | 7 => (), // tabs?
-            _ => {
-                debug!("unhandled byte: {}", byte);
-            }
+            _ => (),
         }
     }
 
@@ -178,28 +177,23 @@ impl Perform for VteParser {
         match c {
             'm' => {
                 for p in params {
-                    match p {
-                        [31] => self.ch = 'B',
-                        [32] => self.ch = 'C',
-                        [33] => self.ch = 'D',
-                        [34] => self.ch = 'E',
-                        [35] => self.ch = 'F',
-                        [36] => self.ch = 'G',
-                        [37] => self.ch = 'H',
-                        [38] => self.ch = 'I',
-                        [39] => self.ch = 'J',
-                        [0] => self.ch = 'A',
-                        _ => {
-                            self.ch = 'A';
-                        }
+                    let p = p[0];
+                    if p > 30 && p < 40 {
+                        self.ch = (p + 35) as u8 as char;
+                    } else {
+                        self.ch = 'A';
                     }
                 }
             }
             'K' => {
                 for p in params {
-                    match p {
-                        [0] => {
-                            // erase from cursor to end of line
+                    match p[0] {
+                        0 => {
+                            let mut buf = self.st.buffer().unwrap();
+                            let len = buf.length();
+                            let pos = self.st.insert_position();
+                            buf.remove(pos, len);
+                            self.sbuf.remove(pos, len);
                         }
                         _ => {}
                     }
@@ -207,8 +201,8 @@ impl Perform for VteParser {
             }
             'C' => {
                 for p in params {
-                    match p {
-                        [0] => {}
+                    match p[0] {
+                        0 => {}
                         _ => {}
                     }
                 }
@@ -223,8 +217,8 @@ impl Perform for VteParser {
             }
             'J' => {
                 for p in params {
-                    match p {
-                        [2] => {
+                    match p[0] {
+                        2 => {
                             self.st.buffer().unwrap().set_text("");
                             self.st.style_buffer().unwrap().set_text("");
                         }
@@ -285,13 +279,6 @@ impl PPTerm {
             .with_id("pop2");
         init_menu(&mut m);
         g.end();
-        g.resize_callback({
-            let mut st = st.clone();
-            move |_, x, y, w, h| {
-                m.resize(x, y, w, h);
-                st.resize(x, y, w, h);
-            }
-        });
         st.show_cursor(true);
         st.set_color(Color::Black);
         st.set_cursor_style(text::Cursor::Block);
@@ -303,8 +290,8 @@ impl PPTerm {
         st.set_highlight_data(sbuf.clone(), styles);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 80,
-                rows: 24,
+                cols: 134,
+                rows: 16,
                 pixel_width: 0,
                 pixel_height: 0,
             })
@@ -321,8 +308,23 @@ impl PPTerm {
         let mut child = pair.slave.spawn_command(cmd).unwrap();
         let mut reader = pair.master.try_clone_reader().unwrap();
         let writer = pair.master.take_writer().unwrap();
-        mem::forget(pair);
         let writer = Arc::new(Mutex::new(writer));
+
+        g.resize_callback({
+            let mut st = st.clone();
+            move |_, x, y, w, h| {
+                m.resize(x, y, w, h);
+                st.resize(x, y, w, h);
+                pair.master
+                    .resize(PtySize {
+                        cols: w as u16 / 10,
+                        rows: h as u16 / 10,
+                        pixel_width: 0,
+                        pixel_height: 0,
+                    })
+                    .ok();
+            }
+        });
 
         let mut statemachine = Parser::new();
         let mut performer = VteParser::new(st.clone(), sbuf);
