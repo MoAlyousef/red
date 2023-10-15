@@ -2,7 +2,7 @@
 
 use crate::{cbs, state::STATE, utils};
 use fltk::{enums::*, prelude::*, *};
-use notify::{event::EventKind, Event, INotifyWatcher, RecursiveMode, Watcher};
+use notify::{event::EventKind, Event, RecursiveMode, Watcher};
 use std::{
     env,
     path::{Path, PathBuf},
@@ -33,7 +33,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static)) {
     );
 }
 
-pub fn fbr_cb(f: &mut browser::FileBrowser, watcher: &mut INotifyWatcher) {
+pub fn fbr_cb(f: &mut browser::FileBrowser, watcher: &mut dyn Watcher) {
     if let Some(path) = f.text(f.value()) {
         let path = PathBuf::from(path);
         if path.exists() {

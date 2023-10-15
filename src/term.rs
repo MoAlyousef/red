@@ -290,7 +290,7 @@ impl PPTerm {
         st.set_highlight_data(sbuf.clone(), styles);
         let pair = native_pty_system()
             .openpty(PtySize {
-                cols: 134,
+                cols: 120,
                 rows: 16,
                 pixel_width: 0,
                 pixel_height: 0,
@@ -309,20 +309,21 @@ impl PPTerm {
         let mut reader = pair.master.try_clone_reader().unwrap();
         let writer = pair.master.take_writer().unwrap();
         let writer = Arc::new(Mutex::new(writer));
+        std::mem::forget(pair);
 
         g.resize_callback({
             let mut st = st.clone();
             move |_, x, y, w, h| {
                 m.resize(x, y, w, h);
                 st.resize(x, y, w, h);
-                pair.master
-                    .resize(PtySize {
-                        cols: w as u16 / 10,
-                        rows: h as u16 / 10,
-                        pixel_width: 0,
-                        pixel_height: 0,
-                    })
-                    .ok();
+                // pair.master
+                //     .resize(PtySize {
+                //         cols: w as u16 / 10,
+                //         rows: h as u16 / 10,
+                //         pixel_width: 0,
+                //         pixel_height: 0,
+                //     })
+                //     .ok();
             }
         });
 
