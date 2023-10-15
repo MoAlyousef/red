@@ -93,7 +93,10 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
 pub fn tabs_handle(t: &mut group::Tabs, ev: Event, popup: &mut menu::MenuButton) -> bool {
     match ev {
         Event::Push => {
-            if app::event_mouse_button() == app::MouseButton::Right && app::event_y() > t.y() + 30 {
+            if app::event_mouse_button() == app::MouseButton::Right
+                && app::event_y() > t.y() + 30
+                && t.children() > 0
+            {
                 popup.popup();
                 true
             } else {
