@@ -2,8 +2,6 @@
 
 red or the RustyEditor is a lightweight and minimal text editor which supports multiple-tabs (à la vscode) and which integrates a file browser and a terminal. The editor component supports syntax highlighting via [tree-sitter-highlight](https://github.com/tree-sitter/tree-sitter/tree/master/highlight).
 
-The terminal itself is quite minimal, supports a limited subset of ansi escape sequences using [vte](https://github.com/alacritty/vte), i.e. don't expect to run vim in it!, and is powered by [portable-pty](https://github.com/wez/wezterm/pty). 
-
 ## Building
 ```bash
 git clone https://github.com/MoAlyousef/red
@@ -24,7 +22,6 @@ cargo build --features=fltk/use-wayland --release
 ![image](https://github.com/MoAlyousef/red/assets/37966791/c43a180f-d1db-4528-ace6-d3713dcda202)
 
 ## Known issues
-- On Windows, the terminal defaults to cmd. More ansi escape sequences need to be handled to support powershell. 
 - If you're running KDE and no icons appear in the FileBrowser, you can try setting the KDEDIR to /usr/local.
 - Highlighting via tree-sitter seems to vary between different language modules. tree-sitter-json seems quite limited for example.
 
@@ -35,4 +32,3 @@ cargo build --features=fltk/use-wayland --release
 - Add more options to FileBrowser popup menu and the terminal menu.
 - Support user provided color schemes for the app and the highlighting.
 - Support regex for search & replace. 
-

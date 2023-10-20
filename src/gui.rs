@@ -4,7 +4,7 @@ use fltk_theme::{SchemeType, WidgetScheme};
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "term")]
-use crate::term;
+use fltk_term as term;
 
 #[cfg(feature = "highlight")]
 use crate::highlight;
@@ -68,7 +68,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
         col.fixed(&tab_splitter, 4);
-        let term = term::PPTerm::new();
+        let term = term::PPTerm::default();
         col.fixed(&*term, 160);
     }
     col.end();

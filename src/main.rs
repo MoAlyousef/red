@@ -10,9 +10,6 @@ mod utils;
 #[cfg(feature = "highlight")]
 mod highlight;
 
-#[cfg(feature = "term")]
-mod term;
-
 fn main() {
     let (current_file, current_path) = utils::init_args(env::args());
     let a = gui::init_gui(&current_file, &current_path);

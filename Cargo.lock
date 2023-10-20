@@ -116,7 +116,7 @@ dependencies = [
 [[package]]
 name = "fltk"
 version = "1.4.15"
-source = "git+https://github.com/fltk-rs/fltk-rs#24fc8e1764c27a9227253ff0068049d5fd7b040d"
+source = "git+https://github.com/fltk-rs/fltk-rs#ece05b51cb7cd75b274b7a79d76b9f561244440b"
 dependencies = [
  "bitflags 2.4.1",
  "crossbeam-channel",
@@ -128,9 +128,20 @@ dependencies = [
 [[package]]
 name = "fltk-sys"
 version = "1.4.15"
-source = "git+https://github.com/fltk-rs/fltk-rs#24fc8e1764c27a9227253ff0068049d5fd7b040d"
+source = "git+https://github.com/fltk-rs/fltk-rs#ece05b51cb7cd75b274b7a79d76b9f561244440b"
 dependencies = [
  "cmake",
+]
+
+[[package]]
+name = "fltk-term"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f1c3cfbdff368d4f5115591ce57030603f7d844f12a9039648647476b673a16"
+dependencies = [
+ "fltk",
+ "portable-pty",
+ "vte",
 ]
 
 [[package]]
@@ -333,15 +344,14 @@ name = "red"
 version = "0.1.0"
 dependencies = [
  "fltk",
+ "fltk-term",
  "fltk-theme",
  "notify",
- "portable-pty",
  "regex",
  "tree-sitter-highlight",
  "tree-sitter-md",
  "tree-sitter-rust",
  "tree-sitter-toml",
- "vte",
 ]
 
 [[package]]
