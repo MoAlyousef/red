@@ -115,8 +115,8 @@ dependencies = [
 
 [[package]]
 name = "fltk"
-version = "1.4.15"
-source = "git+https://github.com/fltk-rs/fltk-rs#ece05b51cb7cd75b274b7a79d76b9f561244440b"
+version = "1.4.17"
+source = "git+https://github.com/fltk-rs/fltk-rs#3c1de6511a6d03d8efdb5fe18089164defd1b1d6"
 dependencies = [
  "bitflags 2.4.1",
  "crossbeam-channel",
@@ -127,8 +127,8 @@ dependencies = [
 
 [[package]]
 name = "fltk-sys"
-version = "1.4.15"
-source = "git+https://github.com/fltk-rs/fltk-rs#ece05b51cb7cd75b274b7a79d76b9f561244440b"
+version = "1.4.17"
+source = "git+https://github.com/fltk-rs/fltk-rs#3c1de6511a6d03d8efdb5fe18089164defd1b1d6"
 dependencies = [
  "cmake",
 ]
@@ -219,9 +219,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.149"
+version = "0.2.150"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a08173bc88b7955d1b3145aa561539096c421ac8debde8cbc3612ec635fee29b"
+checksum = "89d92a4743f9a61002fae18374ed11e7973f530cb3a3255fb354818118b2203c"
 
 [[package]]
 name = "log"
@@ -246,9 +246,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.8.8"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "927a765cd3fc26206e66b296465fa9d3e5ab003e651c1b3c060e7956d96b19d2"
+checksum = "3dce281c5e46beae905d4de1870d8b1509a9142b62eedf18b443b011ca8343d0"
 dependencies = [
  "libc",
  "log",
