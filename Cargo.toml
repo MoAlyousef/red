@@ -1,16 +1,16 @@
 [package]
 name = "red"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
-fltk = "1.5.13"
+fltk = "1.5.14"
 fltk-theme = "0.7"
 regex = "1.9.6"
 notify = "5.1"
 # optional deps
 # term
-fltk-term = { git = "https://github.com/fltk-rs/fltk-term", branch = "portable", optional = true }
+fltk-term = { version = "0.2", optional = true }
 # highlight
 tree-sitter-highlight = { version = "0.25", optional = true }
 tree-sitter-rust = { version = "0.24", optional = true }
@@ -31,6 +31,3 @@ term = [
 
 [profile.release]
 strip = true
-
-[patch.crates-io]
-fltk = { git = "https://github.com/fltk-rs/fltk-rs" }

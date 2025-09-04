@@ -1,6 +1,7 @@
 use crate::{cbs, dialogs, fbr, utils};
 use fltk::{enums::*, prelude::*, *};
-use fltk_theme::{SchemeType, WidgetScheme};
+use fltk_theme::{ColorTheme, WidgetScheme, SchemeType};
+use fltk_theme::color_themes::fleet;
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "term")]
@@ -15,14 +16,11 @@ const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App {
     let a = app::App::default();
-    let widget_scheme = WidgetScheme::new(SchemeType::Gleam);
-    widget_scheme.apply();
+    let color_theme = ColorTheme::new(&fleet::GRUVBOX_DARK);
+    color_theme.apply();
+    let scheme = WidgetScheme::new(SchemeType::Fleet2);
+    scheme.apply();
     app::set_menu_linespacing(10);
-    app::set_background_color(0x21, 0x25, 0x2b);
-    app::set_background2_color(0x28, 0x2c, 0x34);
-    app::set_foreground_color(0xab, 0xb2, 0xa2);
-    app::set_color(Color::Selection, 0x32, 0x38, 0x42);
-    app::set_color(Color::Inactive, 88, 0, 0);
 
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
@@ -68,7 +66,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
         col.fixed(&tab_splitter, 4);
-        let term = term::PPTerm::default();
+        let mut term = term::PPTerm::default();
         col.fixed(&*term, 160);
     }
     col.end();
@@ -265,7 +263,13 @@ pub fn create_ed(
     if let Some(p) = current_path.as_ref() {
         buf.load_file(p).ok();
         #[cfg(feature = "highlight")]
-        highlight::highlight(p, &mut ed, &mut buf);
+        std::thread::spawn({
+            let p = p.clone();
+            let mut ed = ed.clone();
+            let mut buf = buf.clone();
+            move || {
+            highlight::highlight(&p, &mut ed, &mut buf);
+        }});
     }
     ed.set_buffer(buf);
     ed

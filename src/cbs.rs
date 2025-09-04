@@ -141,7 +141,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             }
             "&View/Terminal\t" => {
                 let mut item = m.at(m.value()).unwrap();
-                let term: group::Group = app::widget_from_id("term_group").unwrap();
+                let term: group::Scroll = app::widget_from_id("term_group").unwrap();
                 let mut parent = group::Flex::from_dyn_widget(&term.parent().unwrap()).unwrap();
                 if !item.value() {
                     parent.fixed(&term, 1);
@@ -179,7 +179,7 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
 #[cfg(feature = "term")]
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent = group::Flex::from_dyn_widget(&f.parent().unwrap()).unwrap();
-    let term = app::widget_from_id::<group::Group>("term_group").unwrap();
+    let term = app::widget_from_id::<group::Scroll>("term_group").unwrap();
     match ev {
         Event::Push => true,
         Event::Drag => {
