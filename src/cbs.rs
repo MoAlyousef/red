@@ -176,7 +176,6 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
     }
 }
 
-#[cfg(feature = "term")]
 pub fn tab_splitter_cb(f: &mut frame::Frame, ev: Event) -> bool {
     let mut parent = group::Flex::from_dyn_widget(&f.parent().unwrap()).unwrap();
     let term = app::widget_from_id::<group::Scroll>("term_group").unwrap();

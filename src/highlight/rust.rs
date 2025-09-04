@@ -30,7 +30,8 @@ pub const STYLES: &[(&str, u32)] = &[
 pub fn lang_data() -> HighlightData {
     let (names, styles) = super::resolve_styles(STYLES);
     let mut config =
-        HighlightConfiguration::new(ts::LANGUAGE.into(), "rust", ts::HIGHLIGHTS_QUERY, "", "").unwrap();
+        HighlightConfiguration::new(ts::LANGUAGE.into(), "rust", ts::HIGHLIGHTS_QUERY, "", "")
+            .unwrap();
     config.configure(&names);
     HighlightData::new(styles, config, None)
 }

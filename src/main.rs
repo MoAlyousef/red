@@ -19,7 +19,7 @@ fn main() {
         Fl_load_system_icons();
     }
     let (current_file, current_path) = utils::init_args(env::args());
-    let a = gui::init_gui(&current_file, &current_path);
-    state::init_state(current_file, current_path);
+    let (a, term) = gui::init_gui(&current_file, &current_path);
+    state::init_state(current_file, current_path, term);
     a.run().unwrap();
 }

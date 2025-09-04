@@ -6,11 +6,9 @@ edition = "2021"
 [dependencies]
 fltk = "1.5.14"
 fltk-theme = "0.7"
-regex = "1.9.6"
+fltk-term = { version = "0.2" }
 notify = "5.1"
-# optional deps
-# term
-fltk-term = { version = "0.2", optional = true }
+regex = "1.9.6"
 # highlight
 tree-sitter-highlight = { version = "0.25", optional = true }
 tree-sitter-rust = { version = "0.24", optional = true }
@@ -18,16 +16,13 @@ tree-sitter-toml-ng = { version = "0.7", optional = true }
 tree-sitter-md = { version = "0.3", optional = true }
 
 [features]
-default = ["highlight", "term"]
+default = ["highlight"]
 highlight = [
     "tree-sitter-highlight", 
     "tree-sitter-rust", 
     "tree-sitter-toml-ng", 
     "tree-sitter-md",
     ]
-term = [
-    "fltk-term"
-]
 
 [profile.release]
 strip = true

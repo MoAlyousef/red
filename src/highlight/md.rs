@@ -17,7 +17,8 @@ pub const STYLES: &[(&str, u32)] = &[
 pub fn lang_data() -> HighlightData {
     let (names, styles) = super::resolve_styles(STYLES);
     let mut config =
-        HighlightConfiguration::new(ts::LANGUAGE.into(), "md", ts::HIGHLIGHT_QUERY_BLOCK, "", "").unwrap();
+        HighlightConfiguration::new(ts::LANGUAGE.into(), "md", ts::HIGHLIGHT_QUERY_BLOCK, "", "")
+            .unwrap();
     config.configure(&names);
     HighlightData::new(styles, config, None)
 }

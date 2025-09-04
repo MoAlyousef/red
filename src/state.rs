@@ -2,13 +2,12 @@
 
 use crate::gui;
 use fltk::{app, group, prelude::*, text, utils::oncelock::Lazy};
+use fltk_term as term;
 use std::collections::HashMap;
 use std::{
     path::PathBuf,
     sync::atomic::{AtomicU32, Ordering},
 };
-#[cfg(feature = "term")]
-use fltk_term as term;
 
 static COUNT: AtomicU32 = AtomicU32::new(0);
 
@@ -23,20 +22,17 @@ pub struct MyBuffer {
 pub struct State {
     pub map: HashMap<usize, MyBuffer>,
     pub current_dir: PathBuf,
-    #[cfg(feature = "term")]
-    pub term: Option<term::PPTerm>,
+    pub term: term::PPTerm,
 }
 
 impl State {
-    #[cfg(feature = "term")]
-    pub fn new(current_dir: PathBuf) -> Self {
+    pub fn new(current_dir: PathBuf, term: term::PPTerm) -> Self {
         let map = HashMap::default();
-        State { map, current_dir, term: None }
-    }
-    #[cfg(not(feature = "term"))]
-    pub fn new(current_dir: PathBuf) -> Self {
-        let map = HashMap::default();
-        State { map, current_dir }
+        State {
+            map,
+            current_dir,
+            term,
+        }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
         let mut tabs: group::Tabs = app::widget_from_id("tabs").unwrap();
@@ -146,8 +142,8 @@ impl State {
 
 pub static STATE: Lazy<app::GlobalState<State>> = Lazy::new(app::GlobalState::<State>::get);
 
-pub fn init_state(current_file: Option<PathBuf>, current_path: PathBuf) {
-    let mut state = State::new(current_path);
+pub fn init_state(current_file: Option<PathBuf>, current_path: PathBuf, term: term::PPTerm) {
+    let mut state = State::new(current_path, term);
     state.append(current_file);
     app::GlobalState::new(state);
 }
