@@ -4,6 +4,7 @@ use fltk_theme::color_themes::fleet;
 use fltk_theme::{ColorTheme, SchemeType, WidgetScheme};
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "term")]
 use fltk_term as term;
 
 #[cfg(feature = "highlight")]
@@ -13,11 +14,11 @@ const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
-pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> (app::App, term::PPTerm) {
+pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App {
     let a = app::App::default();
     let color_theme = ColorTheme::new(&fleet::GRUVBOX_DARK);
     color_theme.apply();
-    let scheme = WidgetScheme::new(SchemeType::Fleet2);
+    let scheme = WidgetScheme::new(SchemeType::Fleet1);
     scheme.apply();
     app::set_menu_linespacing(10);
 
@@ -60,11 +61,16 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> (app::Ap
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
-    let mut tab_splitter = frame::Frame::default();
-    tab_splitter.handle(cbs::tab_splitter_cb);
-    col.fixed(&tab_splitter, 4);
-    let term = term::PPTerm::default();
-    col.fixed(&*term, 160);
+    #[cfg(feature = "term")]
+    {
+        //  Check if the double prompts is from the wait in fltk-term, originally used for windows!
+        let mut tab_splitter = frame::Frame::default();
+        tab_splitter.handle(cbs::tab_splitter_cb);
+        col.fixed(&tab_splitter, 4);
+        let term = term::PPTerm::default();
+        col.fixed(&*term, 160);
+        std::mem::forget(term);
+    }
     col.end();
     row.end();
     let info = frame::Frame::default()
@@ -81,7 +87,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> (app::Ap
     w.make_resizable(true);
     w.show();
     w.set_callback(cbs::win_cb);
-    (a, term)
+    a
 }
 
 pub fn tabs_handle(t: &mut group::Tabs, ev: Event, popup: &mut menu::MenuButton) -> bool {
@@ -199,14 +205,16 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
     if load_dir {
         m.at(idx).unwrap().set();
     }
-
-    let idx = m.add(
-        "&View/Terminal\t",
-        Shortcut::None,
-        menu::MenuFlag::Toggle,
-        cbs::menu_cb,
-    );
-    m.at(idx).unwrap().set();
+    #[cfg(feature = "term")]
+    {
+        let idx = m.add(
+            "&View/Terminal\t",
+            Shortcut::None,
+            menu::MenuFlag::Toggle,
+            cbs::menu_cb,
+        );
+        m.at(idx).unwrap().set();
+    }
     m.add(
         "&Help/About\t",
         Shortcut::None,

@@ -2,7 +2,6 @@
 
 use crate::gui;
 use fltk::{app, group, prelude::*, text, utils::oncelock::Lazy};
-use fltk_term as term;
 use std::collections::HashMap;
 use std::{
     path::PathBuf,
@@ -22,16 +21,14 @@ pub struct MyBuffer {
 pub struct State {
     pub map: HashMap<usize, MyBuffer>,
     pub current_dir: PathBuf,
-    pub term: term::PPTerm,
 }
 
 impl State {
-    pub fn new(current_dir: PathBuf, term: term::PPTerm) -> Self {
+    pub fn new(current_dir: PathBuf) -> Self {
         let map = HashMap::default();
         State {
             map,
             current_dir,
-            term,
         }
     }
     pub fn append(&mut self, current_path: Option<PathBuf>) {
@@ -142,8 +139,8 @@ impl State {
 
 pub static STATE: Lazy<app::GlobalState<State>> = Lazy::new(app::GlobalState::<State>::get);
 
-pub fn init_state(current_file: Option<PathBuf>, current_path: PathBuf, term: term::PPTerm) {
-    let mut state = State::new(current_path, term);
+pub fn init_state(current_file: Option<PathBuf>, current_path: PathBuf) {
+    let mut state = State::new(current_path);
     state.append(current_file);
     app::GlobalState::new(state);
 }
