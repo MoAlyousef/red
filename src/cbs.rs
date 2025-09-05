@@ -11,14 +11,16 @@ fn nfc_get_file(mode: dialog::NativeFileChooserType) -> PathBuf {
 fn find() {
     let mut dlg: window::Window = app::widget_from_id("find").unwrap();
     let main_win = app::first_window().unwrap();
-    dlg.resize(main_win.x() + main_win.w() - 300, main_win.y() + 30, 300, 50);
+    dlg.resize(main_win.x() + main_win.w() - 400, main_win.y() + 30, 400, 50);
+    dlg.hide();
     dlg.show();
 }
 
 fn replace() {
     let mut dlg: window::Window = app::widget_from_id("replace").unwrap();
     let main_win = app::first_window().unwrap();
-    dlg.resize(main_win.x() + main_win.w() - 300, main_win.y() + 30, 300, 80);
+    dlg.resize(main_win.x() + main_win.w() - 400, main_win.y() + 30, 400, 80);
+    dlg.hide();
     dlg.show();
 }
 
