@@ -17,7 +17,7 @@ anyhow = "1"
 crossbeam-channel = "0.5"
 # optional deps
 # term
-fltk-term = { version = "0.2.2", optional = true }
+fltk-term = { version = "0.2.3", optional = true }
 # highlight
 tree-sitter-highlight = { version = "0.25", optional = true }
 tree-sitter-rust = { version = "0.24", optional = true }
