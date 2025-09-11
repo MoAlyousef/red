@@ -1,4 +1,4 @@
-use crate::{cbs, dialogs, fbr, utils};
+use crate::{cbs, dialogs, fbr, lsp, utils};
 use fltk::{enums::*, prelude::*, *};
 use fltk_theme::color_themes::fleet;
 use fltk_theme::{ColorTheme, SchemeType, WidgetScheme};
@@ -28,6 +28,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let _find_dialog = dialogs::FindDialog::new();
     let _replace_dialog = dialogs::ReplaceDialog::new();
     let _image_dialog = dialogs::ImageDialog::new();
+    let _completion_dialog = dialogs::CompletionDialog::new();
 
     let mut popup = menu::MenuButton::default().with_type(menu::MenuButtonType::Popup3);
     init_edit_menu(&mut popup, "");
@@ -75,8 +76,9 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     row.end();
     let info = frame::Frame::default()
         .with_label(&format!(
-            "Directory: {}",
-            utils::strip_unc_path(current_path)
+            "Directory: {}   |   LSP: {}",
+            utils::strip_unc_path(current_path),
+            lsp::status_text()
         ))
         .with_align(enums::Align::Left | enums::Align::Inside)
         .with_id("info");
@@ -231,6 +233,66 @@ pub fn init_editor(ed: &mut text::TextEditor) {
     ed.set_text_font(Font::Courier);
     ed.set_trigger(CallbackTrigger::Changed);
     ed.set_callback(cbs::editor_cb);
+    // Handle Ctrl+Space for completion
+    ed.handle(|e, ev| {
+        if let Event::Shortcut | Event::KeyDown = ev {
+            if app::event_state().contains(Shortcut::Ctrl) && app::event_key() == Key::from_char(' ') {
+                // Avoid activity if LSP is unavailable
+                if !crate::lsp::is_available() {
+                    return true;
+                }
+                // request completion at current caret position
+                if let Some(buf) = e.buffer() {
+                    let pos = e.insert_position();
+                    let text = buf.text();
+                    let lsp_pos = crate::lsp::compute_position_from_offset(&text, pos as usize);
+                    let ed_ptr = e.as_widget_ptr() as usize;
+                    // find path for current editor
+                    crate::state::STATE.with(move |s| {
+                        if let Some(v) = s.map.get(&ed_ptr) {
+                            if let Some(path) = v.current_file.as_ref() {
+                                let path = path.clone();
+                                crate::lsp::with_client(move |c| {
+                                    c.completion(&path, lsp_pos, move |resp| {
+                                        // Build popup entries
+                                        let items = match resp {
+                                            lsp_types::CompletionResponse::Array(arr) => arr,
+                                            lsp_types::CompletionResponse::List(list) => list.items,
+                                        };
+                                        let mut entries = Vec::with_capacity(items.len());
+                                        for item in items.into_iter() {
+                                            let insert_text = item.insert_text.clone().unwrap_or_else(|| item.label.clone());
+                                            let edit_range: Option<lsp_types::Range> = item.text_edit.as_ref().map(|te| match te {
+                                                lsp_types::CompletionTextEdit::Edit(ed_) => ed_.range,
+                                                lsp_types::CompletionTextEdit::InsertAndReplace(ir) => ir.replace,
+                                            });
+                                            entries.push(crate::completion::CompletionEntry {
+                                                label: item.label,
+                                                insert_text,
+                                                edit_range,
+                                                kind: item.kind,
+                                                detail: item.detail,
+                                            });
+                                        }
+                                        let entries_arc = std::sync::Arc::new(entries);
+                                        app::awake_callback(move || {
+                                            let entries_vec = (*entries_arc).clone();
+                                            let maybe_ed = crate::state::STATE.with(|s3| s3.current_editor());
+                                            if let Some(ed_now) = maybe_ed {
+                                                crate::completion::show_popup(&ed_now, entries_vec);
+                                            }
+                                        });
+                                    });
+                                });
+                            }
+                        }
+                    });
+                }
+                return true;
+            }
+        }
+        false
+    });
 }
 
 pub fn create_ed(

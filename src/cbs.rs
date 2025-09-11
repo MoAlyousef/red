@@ -42,6 +42,46 @@ pub fn win_cb(_: &mut window::Window) {
 
 pub fn editor_cb(_e: &mut text::TextEditor) {
     app::add_timeout3(0.01, |_| STATE.with(|s| s.was_modified(true)));
+    // Debounced didChange: bump change_seq, schedule a send in configurable delay
+    let debounce_ms: f64 = std::env::var("RED_LSP_DEBOUNCE_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .map(|v| v as f64 / 1000.0)
+        .unwrap_or(0.20);
+    if let Some((id, seq)) = STATE.with(|s| {
+        if let Some(current_id) = s.current_id() {
+            if let Some(mb) = s.map.get(&current_id) {
+                Some((current_id, mb.change_seq))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }) {
+        // bump seq
+        STATE.with(move |s| {
+            if let Some(mb) = s.map.get_mut(&id) {
+                mb.change_seq = mb.change_seq.wrapping_add(1);
+            }
+        });
+        let scheduled_seq = seq + 1;
+        app::add_timeout3(debounce_ms, move |_| {
+            STATE.with(move |s2| {
+                if let Some(mb) = s2.map.get_mut(&id) {
+                    if mb.change_seq == scheduled_seq {
+                        // latest edit reached debounce; send didChange with current text
+                        mb.version += 1;
+                        let version = mb.version;
+                        if let Some(path) = mb.current_file.clone() {
+                            let text = mb.buf.text();
+                            crate::lsp::with_client(|c| c.did_change_full(&path, &text, version));
+                        }
+                    }
+                }
+            });
+        });
+    }
 }
 
 pub fn new_file() {
@@ -78,12 +118,15 @@ pub fn menu_cb(m: &mut impl MenuExt) {
             "&File/Save\t" => {
                 STATE.with(|s| {
                     if let Some(id) = s.current_id() {
-                        let e = s.map.get(&id).unwrap();
-                        let modified = e.modified;
-                        if let Some(current_file) = e.current_file.as_ref() {
+                        let (modified, current_file, contents) = {
+                            let e = s.map.get(&id).unwrap();
+                            (e.modified, e.current_file.clone(), e.buf.text())
+                        };
+                        if let Some(ref current_file) = current_file {
                             if modified && current_file.exists() {
-                                fs::write(current_file, e.buf.text()).ok();
+                                fs::write(current_file, contents).ok();
                                 s.was_modified(false);
+                                crate::lsp::with_client(|c| c.did_save(current_file));
                             }
                         }
                     }
@@ -96,6 +139,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                         if let Some(buf) = s.buf().as_ref() {
                             fs::write(&c, buf.text()).expect("Failed to write to file!");
                             s.was_modified(false);
+                            crate::lsp::with_client(|cl| cl.did_save(&c));
                         }
                     });
                 }
@@ -178,6 +222,14 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
         let ed = text::TextEditor::from_dyn_widget(&g.child(0).unwrap()).unwrap();
         let edid = ed.as_widget_ptr() as usize;
         let buf = ed.buffer().unwrap();
+        // LSP didClose for this file if any
+        STATE.with(move |s| {
+            if let Some(v) = s.map.get(&edid) {
+                if let Some(path) = v.current_file.as_ref() {
+                    crate::lsp::with_client(|c| c.did_close(path));
+                }
+            }
+        });
         let mut parent = g.parent().unwrap();
         parent.remove(g);
         unsafe {

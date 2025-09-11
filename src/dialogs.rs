@@ -501,3 +501,27 @@ impl ImageDialog {
         Self { win }
     }
 }
+
+// Lightweight completion dialog: spawned hidden at startup
+pub struct CompletionDialog {
+    win: window::Window,
+}
+
+impl CompletionDialog {
+    pub fn new() -> Self {
+        let mut win = window::Window::new(0, 0, 360, 220, "").with_id("completion");
+        win.set_border(false);
+        let _list = browser::HoldBrowser::new(0, 0, 360, 220, None).with_id("completion_list");
+        win.end();
+        win.handle(|win, ev| match ev {
+            enums::Event::Hide | enums::Event::Close => {
+                win.hide();
+                true
+            }
+            _ => false,
+        });
+        // Keep hidden until invoked
+        win.hide();
+        Self { win }
+    }
+}

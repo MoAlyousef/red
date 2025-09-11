@@ -16,6 +16,8 @@ pub struct MyBuffer {
     pub id: String,
     pub buf: text::TextBuffer,
     pub current_file: Option<PathBuf>,
+    pub version: i32,
+    pub change_seq: u64,
 }
 
 pub struct State {
@@ -49,8 +51,15 @@ impl State {
                 id,
                 buf: ed.buffer().unwrap(),
                 current_file: current_path.map(|p| p.canonicalize().unwrap()),
+                version: 1,
+                change_seq: 0,
             };
             self.map.insert(ed.as_widget_ptr() as usize, mybuf);
+            // Notify LSP didOpen
+            if let Some(path) = self.current_file() {
+                let text = self.buf().map(|b| b.text()).unwrap_or_default();
+                crate::lsp::with_client(|c| c.did_open(&path, &text, 1));
+            }
         } else {
             tabs.set_value(
                 &text::TextEditor::from_dyn_widget_ptr(edid as *mut _)

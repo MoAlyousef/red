@@ -9,6 +9,8 @@ use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
 
+use crate::diagnostics;
+
 mod colors;
 mod md;
 mod rust;
@@ -30,6 +32,13 @@ fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTab
             attr: TextAttr::None,
             bgcolor: Color::Background,
         });
+    }
+    // Duplicate styles with underline attribute to overlay diagnostics without losing color
+    let base_len = styles.len();
+    for i in 0..base_len {
+        let mut s = styles[i].clone();
+        s.attr = TextAttr::Underline;
+        styles.push(s);
     }
     (names, styles)
 }
@@ -76,7 +85,10 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
     {
         let mut highlighter = Highlighter::new();
         let mut sbuf = TextBuffer::default();
+        let base_styles = styles.len() / 2; // we doubled styles to include underline variants
         ed.set_highlight_data_ext(sbuf.clone(), styles);
+        // Register style buffer for diagnostics overlay
+        diagnostics::register_style_buf(p, &sbuf, base_styles);
         apply(
             &mut highlighter,
             &config,
@@ -128,5 +140,6 @@ fn apply(
             HighlightEvent::HighlightEnd => curr = 0,
         }
     }
+    // Set base syntax highlight
     sbuf.set_text(&local_buf);
 }

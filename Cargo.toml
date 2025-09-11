@@ -8,6 +8,13 @@ fltk = "1.5.14"
 fltk-theme = "0.7"
 notify = "8.2"
 regex = "1.11"
+# LSP + JSON
+lsp-types = "0.95"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+anyhow = "1"
+crossbeam-channel = "0.5"
 # optional deps
 # term
 fltk-term = { version = "0.2.2", optional = true }
