@@ -2,7 +2,7 @@ use fltk::{
     app,
     enums::{Color, Font},
     prelude::DisplayExt,
-    text::{StyleTableEntry, TextBuffer, TextEditor},
+    text::{StyleTableEntryExt, TextAttr, TextBuffer, TextEditor},
 };
 use std::path::Path;
 use tree_sitter_highlight::HighlightConfiguration;
@@ -18,36 +18,38 @@ fn translate_style(idx: usize) -> char {
     char::from_u32(65 + idx as u32).unwrap()
 }
 
-fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTableEntry>) {
+fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTableEntryExt>) {
     let mut names = Vec::new();
     let mut styles = Vec::new();
     for elem in v {
         names.push(elem.0);
-        styles.push(StyleTableEntry {
+        styles.push(StyleTableEntryExt {
             color: Color::from_hex(elem.1),
             font: Font::Courier,
             size: app::font_size(),
+            attr: TextAttr::None,
+            bgcolor: Color::Background,
         });
     }
     (names, styles)
 }
 
 pub struct HighlightData {
-    styles: Vec<StyleTableEntry>,
+    styles: Vec<StyleTableEntryExt>,
     config: HighlightConfiguration,
-    exeption_fn: Option<fn(usize, &str) -> char>,
+    exception_fn: Option<fn(usize, &str) -> char>,
 }
 
 impl HighlightData {
     pub fn new(
-        styles: Vec<StyleTableEntry>,
+        styles: Vec<StyleTableEntryExt>,
         config: HighlightConfiguration,
-        exeption_fn: Option<fn(usize, &str) -> char>,
+        exception_fn: Option<fn(usize, &str) -> char>,
     ) -> Self {
         Self {
             styles,
             config,
-            exeption_fn,
+            exception_fn,
         }
     }
 }
@@ -69,18 +71,18 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
     if let Some(HighlightData {
         styles,
         config,
-        exeption_fn,
+        exception_fn,
     }) = get_highlight(p)
     {
         let mut highlighter = Highlighter::new();
         let mut sbuf = TextBuffer::default();
-        ed.set_highlight_data(sbuf.clone(), styles);
+        ed.set_highlight_data_ext(sbuf.clone(), styles);
         apply(
             &mut highlighter,
             &config,
             &buf.text(),
             &mut sbuf,
-            &exeption_fn,
+            &exception_fn,
         );
         buf.add_modify_callback({
             let buf = buf.clone();
@@ -90,7 +92,7 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
                     &config,
                     &buf.text(),
                     &mut sbuf,
-                    &exeption_fn,
+                    &exception_fn,
                 );
             }
         });
@@ -102,7 +104,7 @@ fn apply(
     config: &HighlightConfiguration,
     s: &str,
     sbuf: &mut TextBuffer,
-    exeption_fn: &Option<fn(usize, &str) -> char>,
+    exception_fn: &Option<fn(usize, &str) -> char>,
 ) {
     let highlights = highlighter
         .highlight(config, s.as_bytes(), None, |_| None)
@@ -116,7 +118,7 @@ fn apply(
                 curr = s.0;
             }
             HighlightEvent::Source { start, end } => {
-                let c = if let Some(f) = exeption_fn {
+                let c = if let Some(f) = exception_fn {
                     f(curr, &s[start..end])
                 } else {
                     translate_style(curr)

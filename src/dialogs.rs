@@ -238,10 +238,7 @@ impl FindDialog {
                                         }
                                         let curr = v[*idx];
                                         let mut ed: text::TextEditor = s.current_editor().unwrap();
-                                        buf.select(
-                                            curr.0 as i32,
-                                            (curr.0 + val2.len()) as i32,
-                                        );
+                                        buf.select(curr.0 as i32, (curr.0 + val2.len()) as i32);
                                         ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
                                         status2.set_label(&format!("{}/{}", *idx + 1, v.len()));
                                         *idx += 1;
@@ -354,7 +351,11 @@ impl ReplaceDialog {
                             let from = ed.insert_position();
                             let (range_start, range_end) = if sel_only {
                                 if let Some((a, b)) = buf.selection_position() {
-                                    let (a, b) = if a <= b { (a as usize, b as usize) } else { (b as usize, a as usize) };
+                                    let (a, b) = if a <= b {
+                                        (a as usize, b as usize)
+                                    } else {
+                                        (b as usize, a as usize)
+                                    };
                                     (a, b)
                                 } else {
                                     (0usize, text.len())
@@ -362,7 +363,8 @@ impl ReplaceDialog {
                             } else {
                                 (0usize, text.len())
                             };
-                            let clamp_from = from.clamp(range_start as i32, range_end as i32) as usize;
+                            let clamp_from =
+                                from.clamp(range_start as i32, range_end as i32) as usize;
                             if reg_val {
                                 if let Ok(re) = regex::Regex::new(&search) {
                                     let mut found = re
@@ -376,7 +378,8 @@ impl ReplaceDialog {
                                     if let Some(m) = found {
                                         let start = m.start();
                                         let end = m.end();
-                                        let rep_cow = re.replace(&text[start..end], replace.as_str());
+                                        let rep_cow =
+                                            re.replace(&text[start..end], replace.as_str());
                                         buf.replace(start as i32, end as i32, rep_cow.as_ref());
                                         let new_end = start + rep_cow.len();
                                         ed.scroll(ed.count_lines(0, start as i32, true), 0);
@@ -428,7 +431,11 @@ impl ReplaceDialog {
                         let text = buf.text();
                         let (range_start, range_end) = if sel_only {
                             if let Some((a, b)) = buf.selection_position() {
-                                let (a, b) = if a <= b { (a as usize, b as usize) } else { (b as usize, a as usize) };
+                                let (a, b) = if a <= b {
+                                    (a as usize, b as usize)
+                                } else {
+                                    (b as usize, a as usize)
+                                };
                                 (a, b)
                             } else {
                                 (0usize, text.len())
@@ -443,7 +450,11 @@ impl ReplaceDialog {
                                 replaced = re.find_iter(sub).count();
                                 if replaced > 0 {
                                     let nsub = re.replace_all(sub, replace.as_str());
-                                    buf.replace(range_start as i32, range_end as i32, nsub.as_ref());
+                                    buf.replace(
+                                        range_start as i32,
+                                        range_end as i32,
+                                        nsub.as_ref(),
+                                    );
                                 }
                             }
                         } else {
