@@ -56,6 +56,15 @@ pub fn install_awake_handler() {
             update_status_bar();
             apply_pending();
         });
+        // Also poll periodically so diagnostics still apply even if another
+        // part of the app replaces the global awake callback.
+        fn schedule_diag_poll() {
+            app::add_timeout3(0.2, |_| {
+                apply_pending();
+                schedule_diag_poll();
+            });
+        }
+        schedule_diag_poll();
     }
 }
 
