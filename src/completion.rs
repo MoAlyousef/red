@@ -27,7 +27,9 @@ pub fn show_popup(ed: &text::TextEditor, entries: Vec<CompletionEntry>) {
         // Selection handler: double-click or Space
         use std::sync::Arc;
         let entries_arc = Arc::new(entries);
-        let space_or_enter = || app::event_key() == enums::Key::from_char(' ') || app::event_key() == enums::Key::Enter;
+        let space_or_enter = || {
+            app::event_key() == enums::Key::from_char(' ') || app::event_key() == enums::Key::Enter
+        };
         let mut win_handle = win.clone();
         list.set_callback(move |b| {
             let released = app::event() == enums::Event::Released && app::event_clicks();
@@ -51,7 +53,7 @@ pub fn show_popup(ed: &text::TextEditor, entries: Vec<CompletionEntry>) {
                 } else {
                     false
                 }
-            },
+            }
             _ => false,
         });
         // Position near caret and show
@@ -61,7 +63,9 @@ pub fn show_popup(ed: &text::TextEditor, entries: Vec<CompletionEntry>) {
         ey += (ed.text_size() as i32) + 42;
         win.set_pos(ex, ey);
         win.show();
-        if list.size() > 0 { list.select(1); }
+        if list.size() > 0 {
+            list.select(1);
+        }
         let _ = list.take_focus();
     }
 }

@@ -121,28 +121,8 @@ fn apply_for_path(path: &Path) {
             }
         }
         sb.set_text(&styles);
-        // Update status bar with diagnostics count for active file (errors only)
-        STATE.with(move |st| {
-            let err_count = diags
-                .iter()
-                .filter(|d| {
-                    d.severity
-                        .map(|s| s == lsp::DiagnosticSeverity::ERROR)
-                        .unwrap_or(true)
-                })
-                .count();
-            if let Some(mut info) = app::widget_from_id::<frame::Frame>("info") {
-                let dir = st.current_dir.display().to_string();
-                let lsp_ready = crate::lsp::is_ready();
-                info.set_label(&format!(
-                    "Directory: {}   |   LSP: {}   |   Errors: {}",
-                    dir,
-                    if lsp_ready { "Ready" } else { "Starting" },
-                    err_count
-                ));
-                info.set_align(Align::Left | Align::Inside);
-            }
-        });
+        // Refresh footer to reflect current LSP status and errors
+        update_status_bar();
     }
 }
 

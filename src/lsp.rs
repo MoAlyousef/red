@@ -20,6 +20,7 @@ use fltk::app;
 
 static REQ_ID: AtomicU64 = AtomicU64::new(1);
 static AVAILABLE: AtomicBool = AtomicBool::new(false);
+static DISABLED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
 enum Outgoing {
@@ -559,6 +560,23 @@ fn handle_incoming(
 static CLIENT: OnceLock<Arc<LspClient>> = OnceLock::new();
 
 pub fn init(root: PathBuf) {
+    if disabled_by_env() {
+        DISABLED.store(true, Ordering::Relaxed);
+        AVAILABLE.store(false, Ordering::Relaxed);
+        lsp_log("LSP disabled by environment");
+        app::awake();
+        return;
+    }
+    // Only start LSP if a Cargo.toml exists in the working directory
+    if !root.join("Cargo.toml").exists() {
+        AVAILABLE.store(false, Ordering::Relaxed);
+        lsp_log(&format!(
+            "LSP not started: missing Cargo.toml in {}",
+            root.display()
+        ));
+        app::awake();
+        return;
+    }
     let start = || LspClient::start(root);
     match start() {
         Ok(c) => {
@@ -590,16 +608,32 @@ pub fn is_ready() -> bool {
 }
 
 pub fn is_available() -> bool {
-    AVAILABLE.load(Ordering::Relaxed)
+    AVAILABLE.load(Ordering::Relaxed) && !is_disabled()
 }
 
 pub fn status_text() -> String {
-    if !is_available() {
-        "Unavailable".into()
+    if is_disabled() {
+        "disabled".into()
+    } else if !AVAILABLE.load(Ordering::Relaxed) {
+        "unavailable".into()
     } else if is_ready() {
-        "Ready".into()
+        "ready".into()
     } else {
-        "Starting".into()
+        "starting".into()
+    }
+}
+
+pub fn is_disabled() -> bool {
+    DISABLED.load(Ordering::Relaxed)
+}
+
+fn disabled_by_env() -> bool {
+    match std::env::var("RED_LSP_DISABLE") {
+        Ok(v) => match v.to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => true,
+            _ => false,
+        },
+        Err(_) => false,
     }
 }
 

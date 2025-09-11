@@ -14,6 +14,17 @@ const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
+fn schedule_status_refresh() {
+    // Poll LSP status until it is no longer "starting"
+    app::add_timeout3(0.3, |_| {
+        crate::diagnostics::update_status_bar();
+        let st = crate::lsp::status_text();
+        if st == "starting" {
+            schedule_status_refresh();
+        }
+    });
+}
+
 pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App {
     let a = app::App::default();
     let color_theme = ColorTheme::new(&fleet::GRUVBOX_DARK);
@@ -89,6 +100,8 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     w.make_resizable(true);
     w.show();
     w.set_callback(cbs::win_cb);
+    // Kick status refresh until LSP becomes ready/disabled/unavailable
+    schedule_status_refresh();
     a
 }
 
@@ -196,7 +209,7 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
-    m.at(idx).unwrap().set_label_color(Color::Red);
+    // m.at(idx).unwrap().set_label_color(Color::Red.darker());
     init_edit_menu(m, "&Edit/");
     let idx = m.add(
         "&View/File browser\t",
