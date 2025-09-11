@@ -75,11 +75,11 @@ pub(crate) fn lsp_log(msg: &str) {
 // Full JSON logging helper intentionally omitted to keep logs concise.
 
 pub struct LspClient {
-    child: Child,
+    _child: Child,
     tx: Sender<Outgoing>,
     _writer: std::thread::JoinHandle<()>,
     _reader: std::thread::JoinHandle<()>,
-    caps: Arc<Mutex<Option<lsp::ServerCapabilities>>>,
+    _caps: Arc<Mutex<Option<lsp::ServerCapabilities>>>,
     ready: Arc<std::sync::atomic::AtomicBool>,
     queue: Arc<Mutex<Vec<Outgoing>>>,
 }
@@ -134,11 +134,11 @@ impl LspClient {
         });
 
         let client = Arc::new(LspClient {
-            child,
+            _child: child,
             tx,
             _writer: writer,
             _reader: reader,
-            caps,
+            _caps: caps,
             ready,
             queue,
         });
@@ -302,12 +302,10 @@ impl LspClient {
     fn send_or_queue(&self, msg: Outgoing) {
         if self.ready.load(Ordering::Relaxed) {
             let _ = self.tx.send(msg);
+        } else if let Ok(mut q) = self.queue.lock() {
+            q.push(msg);
         } else {
-            if let Ok(mut q) = self.queue.lock() {
-                q.push(msg);
-            } else {
-                lsp_log("failed to lock queue; dropping message");
-            }
+            lsp_log("failed to lock queue; dropping message");
         }
     }
 }
@@ -395,7 +393,7 @@ fn pending() -> &'static Arc<Mutex<HashMap<u64, Pending>>> {
 #[derive(Debug, Deserialize)]
 struct RawMsg {
     #[serde(default)]
-    jsonrpc: String,
+    _jsonrpc: String,
     #[serde(default)]
     id: Option<JsonValue>,
     #[serde(default)]
@@ -629,10 +627,7 @@ pub fn is_disabled() -> bool {
 
 fn disabled_by_env() -> bool {
     match std::env::var("RED_LSP_DISABLE") {
-        Ok(v) => match v.to_ascii_lowercase().as_str() {
-            "1" | "true" | "yes" | "on" => true,
-            _ => false,
-        },
+        Ok(v) => matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"),
         Err(_) => false,
     }
 }
@@ -664,10 +659,9 @@ pub fn compute_position_from_offset(text: &str, offset: usize) -> lsp::Position 
 
 pub fn range_to_offsets(text: &str, range: lsp::Range) -> (usize, usize) {
     fn pos_to_off(text: &str, pos: lsp::Position) -> usize {
-        let mut line = 0u32;
         let mut off = 0usize;
-        for l in text.split_inclusive('\n') {
-            if line == pos.line {
+        for (line_idx, l) in text.split_inclusive('\n').enumerate() {
+            if line_idx as u32 == pos.line {
                 let mut col16 = 0u32;
                 let mut byte_off = 0usize;
                 for ch in l.chars() {
@@ -681,7 +675,6 @@ pub fn range_to_offsets(text: &str, range: lsp::Range) -> (usize, usize) {
                 return off;
             }
             off += l.len();
-            line += 1;
         }
         text.len()
     }

@@ -1,6 +1,6 @@
 # red
 
-red or the RustyEditor is a lightweight and minimal text editor which supports multiple-tabs (à la vscode) and which integrates a file browser and a terminal. The editor component supports syntax highlighting via [tree-sitter-highlight](https://github.com/tree-sitter/tree-sitter/tree/master/highlight).
+red or the RustyEditor is a lightweight and minimal text editor which supports multiple-tabs (à la vscode) and which integrates a file browser and a terminal. The editor component supports syntax highlighting via [tree-sitter-highlight](https://github.com/tree-sitter/tree-sitter/tree/master/highlight). lsp support via json-rpc (completions via ctrl+space).
 
 ## Building
 ```bash
@@ -31,4 +31,4 @@ cargo build --features=fltk/use-wayland --release
 - Enable using FLTK's FileChooser instead of the system provided one via the settings.
 - Add more options to FileBrowser popup menu and the terminal menu.
 - Support user provided color schemes for the app and the highlighting.
-- Support regex for search & replace. 
+

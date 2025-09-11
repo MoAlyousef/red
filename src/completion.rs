@@ -24,16 +24,22 @@ pub fn show_popup(ed: &text::TextEditor, entries: Vec<CompletionEntry>) {
         for e in &entries {
             list.add(&format_item(e));
         }
-        // Selection handler: double-click or Space
+        // Selection handler: double-click or Space/Enter (Space only without Ctrl)
         use std::sync::Arc;
         let entries_arc = Arc::new(entries);
         let space_or_enter = || {
-            app::event_key() == enums::Key::from_char(' ') || app::event_key() == enums::Key::Enter
+            if app::event() != enums::Event::KeyDown {
+                return false;
+            }
+            let k = app::event_key();
+            let mods = app::event_state();
+            (k == enums::Key::Enter || k == enums::Key::KPEnter)
+                || (k == enums::Key::from_char(' ') && !mods.contains(enums::Shortcut::Ctrl))
         };
         let mut win_handle = win.clone();
         list.set_callback(move |b| {
             let released = app::event() == enums::Event::Released && app::event_clicks();
-            let enter = app::event() == enums::Event::KeyDown && space_or_enter();
+            let enter = space_or_enter();
             if released || enter {
                 let idx = b.value();
                 if idx > 0 {
@@ -43,8 +49,7 @@ pub fn show_popup(ed: &text::TextEditor, entries: Vec<CompletionEntry>) {
                 }
             }
         });
-        // Window key handling & dismissal
-        let mut list2 = list.clone();
+        // Handle Space/Enter on the list as well
         list.handle(move |l, ev| match ev {
             enums::Event::KeyDown => {
                 if space_or_enter() {
@@ -56,11 +61,12 @@ pub fn show_popup(ed: &text::TextEditor, entries: Vec<CompletionEntry>) {
             }
             _ => false,
         });
+        // No extra key handler; Enter handled via callback above
         // Position near caret and show
         let pos = ed.insert_position();
         let (mut ex, mut ey) = ed.position_to_xy(pos);
         ex += 8;
-        ey += (ed.text_size() as i32) + 42;
+        ey += ed.text_size() + 42;
         win.set_pos(ex, ey);
         win.show();
         if list.size() > 0 {
@@ -112,7 +118,7 @@ fn insert_entry_owned(ent: CompletionEntry) {
 }
 
 fn kind_to_short(k: lsp::CompletionItemKind) -> String {
-    format!("{}", format!("{:?}", k).to_lowercase())
+    format!("{:?}", k).to_lowercase().to_string()
 }
 
 fn format_item(e: &CompletionEntry) -> String {

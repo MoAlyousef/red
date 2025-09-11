@@ -105,18 +105,23 @@ fn apply_for_path(path: &Path) {
             return;
         }
         // Clear existing underlines by normalizing any underlined style back to base (keep color)
-        normalize_styles(&mut styles, base_styles);
-        // Apply error underlines (severity 1)
-        for d in diags.iter() {
-            if matches!(d.severity, Some(lsp::DiagnosticSeverity::ERROR)) || d.severity.is_none() {
-                if let (Some(start), Some(end)) = (
-                    pos_to_offset(&text, d.range.start),
-                    pos_to_offset(&text, d.range.end),
-                ) {
-                    let len = styles.len();
-                    let sidx = start.min(len);
-                    let eidx = end.min(len);
-                    underline_range(&mut styles, sidx, eidx, base_styles);
+        {
+            let bytes = unsafe { styles.as_bytes_mut() };
+            normalize_styles(bytes, base_styles);
+            // Apply error underlines (severity 1)
+            for d in diags.iter() {
+                if matches!(d.severity, Some(lsp::DiagnosticSeverity::ERROR))
+                    || d.severity.is_none()
+                {
+                    if let (Some(start), Some(end)) = (
+                        pos_to_offset(&text, d.range.start),
+                        pos_to_offset(&text, d.range.end),
+                    ) {
+                        let len = bytes.len();
+                        let sidx = start.min(len);
+                        let eidx = end.min(len);
+                        underline_range(bytes, sidx, eidx, base_styles);
+                    }
                 }
             }
         }
@@ -135,10 +140,10 @@ fn with_collect<T, F: FnOnce(&mut DiagState) -> Option<T>>(f: F) -> Option<T> {
     }
 }
 
-fn normalize_styles(buf: &mut String, base_styles: usize) {
+fn normalize_styles(bytes: &mut [u8], base_styles: usize) {
     let base = 'A' as u32;
     let total = base_styles * 2;
-    for ch in unsafe { buf.as_bytes_mut() } {
+    for ch in bytes.iter_mut() {
         let c = *ch as char;
         let idx = (c as u32).saturating_sub(base) as usize;
         if idx < total && idx >= base_styles {
@@ -149,18 +154,17 @@ fn normalize_styles(buf: &mut String, base_styles: usize) {
     }
 }
 
-fn underline_range(buf: &mut String, start: usize, end: usize, base_styles: usize) {
+fn underline_range(bytes: &mut [u8], start: usize, end: usize, base_styles: usize) {
     let base = 'A' as u32;
     let total = base_styles * 2;
-    let bytes = unsafe { buf.as_bytes_mut() };
     let end = end.min(bytes.len());
-    for i in start..end {
-        let c = bytes[i] as char;
+    for b in bytes.iter_mut().take(end).skip(start) {
+        let c = *b as char;
         let idx = (c as u32).saturating_sub(base) as usize;
         if idx < base_styles {
             let new_idx = idx + base_styles;
             if new_idx < total {
-                bytes[i] = (base + new_idx as u32) as u8;
+                *b = (base + new_idx as u32) as u8;
             }
         }
     }
@@ -170,7 +174,7 @@ fn pos_to_offset(text: &str, pos: lsp::Position) -> Option<usize> {
     // Convert UTF-16 based Position into byte offset in `text`
     let mut line = 0u32;
     let mut off = 0usize;
-    for (_li, ltxt) in text.split_inclusive('\n').enumerate() {
+    for (line_idx, ltxt) in text.split_inclusive('\n').enumerate() {
         if line == pos.line {
             // compute col in this line
             let mut col16 = 0u32;
@@ -186,7 +190,7 @@ fn pos_to_offset(text: &str, pos: lsp::Position) -> Option<usize> {
             return Some(off);
         }
         off += ltxt.len();
-        line += 1;
+        line = line_idx as u32 + 1;
     }
     // If target line is after last, clamp to end
     Some(text.len())

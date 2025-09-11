@@ -203,13 +203,13 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
         menu::MenuFlag::MenuDivider,
         cbs::menu_cb,
     );
-    let idx = m.add(
+    let _idx = m.add(
         "&File/Quit\t",
         Shortcut::Ctrl | 'q',
         menu::MenuFlag::Normal,
         cbs::menu_cb,
     );
-    // m.at(idx).unwrap().set_label_color(Color::Red.darker());
+    // m.at(_idx).unwrap().set_label_color(Color::Red.darker());
     init_edit_menu(m, "&Edit/");
     let idx = m.add(
         "&View/File browser\t",

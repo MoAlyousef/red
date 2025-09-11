@@ -36,7 +36,7 @@ fn resolve_styles(v: &[(&'static str, u32)]) -> (Vec<&'static str>, Vec<StyleTab
     // Duplicate styles with underline attribute to overlay diagnostics without losing color
     let base_len = styles.len();
     for i in 0..base_len {
-        let mut s = styles[i].clone();
+        let mut s = styles[i];
         s.attr = TextAttr::Underline;
         styles.push(s);
     }

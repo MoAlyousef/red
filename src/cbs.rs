@@ -50,11 +50,7 @@ pub fn editor_cb(_e: &mut text::TextEditor) {
         .unwrap_or(0.20);
     if let Some((id, seq)) = STATE.with(|s| {
         if let Some(current_id) = s.current_id() {
-            if let Some(mb) = s.map.get(&current_id) {
-                Some((current_id, mb.change_seq))
-            } else {
-                None
-            }
+            s.map.get(&current_id).map(|mb| (current_id, mb.change_seq))
         } else {
             None
         }
