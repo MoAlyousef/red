@@ -69,6 +69,7 @@ pub fn editor_cb(_e: &mut text::TextEditor) {
                         // latest edit reached debounce; send didChange with current text
                         mb.version += 1;
                         let version = mb.version;
+                        #[cfg(feature = "lsp")]
                         if let Some(path) = mb.current_file.clone() {
                             let text = mb.buf.text();
                             crate::lsp::with_client(|c| c.did_change_full(&path, &text, version));
@@ -122,6 +123,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                             if modified && current_file.exists() {
                                 fs::write(current_file, contents).ok();
                                 s.was_modified(false);
+                                #[cfg(feature = "lsp")]
                                 crate::lsp::with_client(|c| c.did_save(current_file));
                             }
                         }
@@ -135,6 +137,7 @@ pub fn menu_cb(m: &mut impl MenuExt) {
                         if let Some(buf) = s.buf().as_ref() {
                             fs::write(&c, buf.text()).expect("Failed to write to file!");
                             s.was_modified(false);
+                            #[cfg(feature = "lsp")]
                             crate::lsp::with_client(|cl| cl.did_save(&c));
                         }
                     });
@@ -219,6 +222,7 @@ pub fn tab_close_cb(g: &mut impl GroupExt) {
         let edid = ed.as_widget_ptr() as usize;
         let buf = ed.buffer().unwrap();
         // LSP didClose for this file if any
+        #[cfg(feature = "lsp")]
         STATE.with(move |s| {
             if let Some(v) = s.map.get(&edid) {
                 if let Some(path) = v.current_file.as_ref() {

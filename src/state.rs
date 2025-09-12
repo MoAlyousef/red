@@ -56,6 +56,7 @@ impl State {
             };
             self.map.insert(ed.as_widget_ptr() as usize, mybuf);
             // Notify LSP didOpen
+            #[cfg(feature = "lsp")]
             if let Some(path) = self.current_file() {
                 let text = self.buf().map(|b| b.text()).unwrap_or_default();
                 crate::lsp::with_client(|c| c.did_open(&path, &text, 1));

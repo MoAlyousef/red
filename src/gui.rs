@@ -1,4 +1,6 @@
-use crate::{cbs, dialogs, fbr, lsp, utils};
+use crate::{cbs, dialogs, fbr, utils};
+#[cfg(feature = "lsp")]
+use crate::lsp;
 use fltk::{enums::*, prelude::*, *};
 use fltk_theme::color_themes::fleet;
 use fltk_theme::{ColorTheme, SchemeType, WidgetScheme};
@@ -14,6 +16,7 @@ const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
+#[cfg(feature = "lsp")]
 fn schedule_status_refresh() {
     // Poll LSP status until it is no longer "starting"
     app::add_timeout3(0.3, |_| {
@@ -85,11 +88,15 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     }
     col.end();
     row.end();
+    #[cfg(feature = "lsp")]
+    let lsp_status = lsp::status_text();
+    #[cfg(not(feature = "lsp"))]
+    let lsp_status = "disabled";
     let info = frame::Frame::default()
         .with_label(&format!(
             "Directory: {}   |   LSP: {}",
             utils::strip_unc_path(current_path),
-            lsp::status_text()
+            lsp_status
         ))
         .with_align(enums::Align::Left | enums::Align::Inside)
         .with_id("info");
@@ -101,6 +108,7 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     w.show();
     w.set_callback(cbs::win_cb);
     // Kick status refresh until LSP becomes ready/disabled/unavailable
+    #[cfg(feature = "lsp")]
     schedule_status_refresh();
     a
 }
@@ -249,6 +257,7 @@ pub fn init_editor(ed: &mut text::TextEditor) {
     // Handle Ctrl+Space for completion
     ed.handle(|e, ev| {
         if let Event::Shortcut | Event::KeyDown = ev {
+            #[cfg(feature = "lsp")]
             if app::event_state().contains(Shortcut::Ctrl) && app::event_key() == Key::from_char(' ') {
                 // Avoid activity if LSP is unavailable
                 if !crate::lsp::is_available() {
