@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use std::fmt;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use lsp_types as lsp;
 use serde::{Deserialize, Serialize};
@@ -12,11 +12,43 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc, Mutex, OnceLock,
 };
-use url::Url;
+use lsp_types::Url;
 
 use crate::diagnostics;
 use fltk::app;
 // STATE not used directly here; keep LSP isolated
+
+// ---- Minimal error type to avoid anyhow dependency ----
+#[derive(Debug)]
+pub struct LspError(String);
+
+impl LspError {
+    pub fn msg<S: Into<String>>(s: S) -> Self {
+        LspError(s.into())
+    }
+}
+
+impl fmt::Display for LspError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for LspError {}
+
+impl From<std::io::Error> for LspError {
+    fn from(e: std::io::Error) -> Self {
+        LspError(format!("io error: {e}"))
+    }
+}
+
+impl From<serde_json::Error> for LspError {
+    fn from(e: serde_json::Error) -> Self {
+        LspError(format!("json error: {e}"))
+    }
+}
+
+type Result<T> = std::result::Result<T, LspError>;
 
 static REQ_ID: AtomicU64 = AtomicU64::new(1);
 static AVAILABLE: AtomicBool = AtomicBool::new(false);
@@ -93,7 +125,9 @@ impl LspClient {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
         lsp_log(&format!("starting rust-analyzer in {}", root.display()));
-        let mut child = cmd.spawn().context("failed to start rust-analyzer")?;
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| LspError::msg(format!("failed to start rust-analyzer: {e}")))?;
         // Drain stderr in background to surface errors
         if let Some(es) = child.stderr.take() {
             std::thread::spawn(move || {
@@ -114,8 +148,14 @@ impl LspClient {
 
     pub fn start(root: PathBuf) -> Result<Arc<Self>> {
         let mut child = Self::spawn_server(&root)?;
-        let stdin = child.stdin.take().ok_or_else(|| anyhow!("no stdin"))?;
-        let stdout = child.stdout.take().ok_or_else(|| anyhow!("no stdout"))?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| LspError::msg("no stdin"))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| LspError::msg("no stdout"))?;
 
         let (tx, rx) = unbounded::<Outgoing>();
         let caps = Arc::new(Mutex::new(None));
@@ -148,7 +188,8 @@ impl LspClient {
 
     fn initialize(&self, root: &Path) -> Result<()> {
         let id = REQ_ID.fetch_add(1, Ordering::Relaxed);
-        let root_uri = Url::from_directory_path(root).map_err(|_| anyhow!("bad root uri"))?;
+        let root_uri = Url::from_directory_path(root)
+            .map_err(|_| LspError::msg("bad root uri"))?;
         let name = root
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
