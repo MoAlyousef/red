@@ -8,7 +8,7 @@ use std::path::Path;
 use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::HighlightEvent;
 use tree_sitter_highlight::Highlighter;
-
+#[cfg(feature = "lsp")]
 use crate::diagnostics;
 
 mod colors;
@@ -88,6 +88,7 @@ pub fn highlight(p: &Path, ed: &mut TextEditor, buf: &mut TextBuffer) {
         let base_styles = styles.len() / 2; // we doubled styles to include underline variants
         ed.set_highlight_data_ext(sbuf.clone(), styles);
         // Register style buffer for diagnostics overlay
+        #[cfg(feature = "lsp")]
         diagnostics::register_style_buf(p, &sbuf, base_styles);
         apply(
             &mut highlighter,
