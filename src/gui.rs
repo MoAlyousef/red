@@ -12,8 +12,8 @@ use fltk_term as term;
 #[cfg(feature = "highlight")]
 use crate::highlight;
 
-const WIDTH: i32 = 800;
-const HEIGHT: i32 = 600;
+const WIDTH: i32 = 1280;
+const HEIGHT: i32 = 800;
 const MENU_HEIGHT: i32 = if cfg!(target_os = "macos") { 1 } else { 30 };
 
 #[cfg(feature = "lsp")]
