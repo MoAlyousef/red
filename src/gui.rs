@@ -76,16 +76,16 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
-    let mut term;
     #[cfg(feature = "term")]
-    {
+    let mut term = {
         //  Check if the double prompts is from the wait in fltk-term, originally used for windows!
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
         col.fixed(&tab_splitter, 4);
-        term = term::PPTerm::new_deferred(0, 0, 0, 0, None);
+        let term = term::PPTerm::new_deferred(0, 0, 0, 0, None);
         col.fixed(&*term, 160);
-    }
+        term
+    };
     col.end();
     row.end();
     #[cfg(feature = "lsp")]
