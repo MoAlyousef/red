@@ -1,6 +1,6 @@
-# red
+# RustyEd
 
-red or the RustyEditor is a lightweight and minimal text editor which supports multiple-tabs (à la vscode) and which integrates a file browser and a terminal. The editor component supports syntax highlighting via [tree-sitter-highlight](https://github.com/tree-sitter/tree-sitter/tree/master/highlight). lsp support via json-rpc (completions via ctrl+space).
+red or RustyEd is a lightweight and minimal text editor which supports multiple-tabs (à la vscode) and which integrates a file browser and a terminal. The editor component supports syntax highlighting via [tree-sitter-highlight](https://github.com/tree-sitter/tree-sitter/tree/master/highlight). lsp support via json-rpc (completions via ctrl+space).
 
 ## Building
 ```bash

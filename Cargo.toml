@@ -1,5 +1,5 @@
 [package]
-name = "red"
+name = "RustyEd"
 version = "0.1.3"
 edition = "2021"
 description = "A simple text editor written in Rust using FLTK"
