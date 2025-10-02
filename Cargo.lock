@@ -153,9 +153,9 @@ dependencies = [
 
 [[package]]
 name = "fltk-term"
-version = "0.2.3"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "076084ef4bd571ebf642d3fe7148893fd50c7629e93f4fbcfa9b102ff4dc55f5"
+checksum = "216092fd7f1c0245527a0702c815ab512a32fc0e0669730726fb50dde887cd8a"
 dependencies = [
  "fltk",
  "portable-pty",

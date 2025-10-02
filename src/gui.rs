@@ -55,7 +55,6 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     let mut col0 = group::Flex::default_fill().column();
     col0.set_pad(2);
     let mut m = menu::SysMenuBar::default().with_id("menu");
-    m.set_color(Color::Background2);
     init_menu(&mut m, current_file.is_none());
     col0.fixed(&m, MENU_HEIGHT);
     let mut row = group::Flex::default();
@@ -76,15 +75,15 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     tabs.handle_overflow(group::TabsOverflow::Pulldown);
     tabs.end();
     tabs.auto_layout();
+    let mut term;
     #[cfg(feature = "term")]
     {
         //  Check if the double prompts is from the wait in fltk-term, originally used for windows!
         let mut tab_splitter = frame::Frame::default();
         tab_splitter.handle(cbs::tab_splitter_cb);
         col.fixed(&tab_splitter, 4);
-        let term = term::PPTerm::default();
+        term = term::PPTerm::new_deferred(0, 0, 0, 0, None);
         col.fixed(&*term, 160);
-        std::mem::forget(term);
     }
     col.end();
     row.end();
@@ -106,6 +105,12 @@ pub fn init_gui(current_file: &Option<PathBuf>, current_path: &Path) -> app::App
     w.end();
     w.make_resizable(true);
     w.show();
+    w.wait_for_expose();
+    #[cfg(feature = "term")]
+    {
+        term.start();
+        std::mem::forget(term);
+    }
     w.set_callback(cbs::win_cb);
     // Kick status refresh until LSP becomes ready/disabled/unavailable
     #[cfg(feature = "lsp")]
@@ -247,9 +252,10 @@ pub fn init_menu(m: &mut (impl MenuExt + 'static), load_dir: bool) {
 }
 
 pub fn init_editor(ed: &mut text::TextEditor) {
+    ed.set_color(Color::Background2.darker().darker());
     ed.set_linenumber_width(40);
     ed.set_linenumber_size(12);
-    ed.set_linenumber_fgcolor(Color::Yellow.darker());
+    ed.set_linenumber_fgcolor(Color::Yellow);
     ed.set_linenumber_bgcolor(Color::Background);
     ed.set_text_font(Font::Courier);
     ed.set_trigger(CallbackTrigger::Changed);
