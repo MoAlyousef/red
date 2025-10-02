@@ -4,6 +4,7 @@ use crate::lsp;
 use fltk::{enums::*, prelude::*, *};
 use fltk_theme::color_themes::fleet;
 use fltk_theme::{ColorTheme, SchemeType, WidgetScheme};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "term")]
@@ -353,7 +354,8 @@ pub fn create_ed(
     let mut buf = text::TextBuffer::default();
     buf.set_tab_distance(4);
     if let Some(p) = current_path.as_ref() {
-        buf.load_file(p).ok();
+        let txt = fs::read_to_string(p).unwrap_or_default();
+        buf.set_text(&txt);
         #[cfg(feature = "highlight")]
         std::thread::spawn({
             let p = p.clone();
