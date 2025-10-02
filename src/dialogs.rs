@@ -178,79 +178,14 @@ impl FindDialog {
             }
         });
 
-        // Enter key triggers navigation to next
+        // Enter key triggers navigation to next by calling button callback
         i.handle({
-            let mut status = status.clone();
-            let reg = reg.clone();
-            let idx_rc = idx.clone();
-            move |i, ev| match ev {
+            let mut b = b.clone();
+            move |_, ev| match ev {
                 enums::Event::KeyDown => {
                     let k = app::event_key();
                     if k == enums::Key::Enter || k == enums::Key::KPEnter {
-                        let val = i.value();
-                        let reg_val = reg.value();
-                        if val.is_empty() {
-                            status.set_label("");
-                            return true;
-                        }
-                        if reg_val && regex::Regex::new(&val).is_err() {
-                            status.set_label("err");
-                            return true;
-                        }
-                        let val2 = val.clone();
-                        let mut status2 = status.clone();
-                        let idx2 = idx_rc.clone();
-                        STATE.with(move |s| {
-                            if let Some(buf) = s.buf().as_mut() {
-                                let text = buf.text();
-                                if reg_val {
-                                    if let Ok(re) = regex::Regex::new(&val2) {
-                                        let v: Vec<_> =
-                                            re.find_iter(&text).map(|m| m.range()).collect();
-                                        if !v.is_empty() {
-                                            let mut idx = idx2.borrow_mut();
-                                            if *idx >= v.len() {
-                                                *idx = 0;
-                                            }
-                                            let curr = &v[*idx];
-                                            let mut ed: text::TextEditor =
-                                                s.current_editor().unwrap();
-                                            buf.select(curr.start as i32, curr.end as i32);
-                                            ed.scroll(
-                                                ed.count_lines(0, curr.start as i32, true),
-                                                0,
-                                            );
-                                            status2.set_label(&format!("{}/{}", *idx + 1, v.len()));
-                                            *idx += 1;
-                                            if *idx == v.len() {
-                                                *idx = 0;
-                                            }
-                                        } else {
-                                            status2.set_label("0/0");
-                                        }
-                                    }
-                                } else {
-                                    let v: Vec<_> = text.match_indices(&val2).collect();
-                                    if !v.is_empty() {
-                                        let mut idx = idx2.borrow_mut();
-                                        if *idx >= v.len() {
-                                            *idx = 0;
-                                        }
-                                        let curr = v[*idx];
-                                        let mut ed: text::TextEditor = s.current_editor().unwrap();
-                                        buf.select(curr.0 as i32, (curr.0 + val2.len()) as i32);
-                                        ed.scroll(ed.count_lines(0, curr.0 as i32, true), 0);
-                                        status2.set_label(&format!("{}/{}", *idx + 1, v.len()));
-                                        *idx += 1;
-                                        if *idx == v.len() {
-                                            *idx = 0;
-                                        }
-                                    } else {
-                                        status2.set_label("0/0");
-                                    }
-                                }
-                            }
-                        });
+                        b.do_callback();
                         true
                     } else {
                         false
